@@ -4,14 +4,28 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Shadow HUD</title>
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body class="app">
-  <header class="appbar"><div id="appbar-title">Character</div></header>
+  <!-- Top bar -->
+  <header class="appbar">
+    <button id="btn-gear" class="icon">⚙︎</button>
+    <div id="appbar-title">Character</div>
+    <button id="btn-plus" class="icon">＋</button>
+  </header>
+
   <main class="content">
+    <!-- CHARACTER -->
     <section id="screen-character" class="screen visible">
+      <!-- Level + Rank -->
       <div class="card level-card">
         <div class="lvl-left">
           <div id="rank-badge" class="rank-badge">E</div>
@@ -25,9 +39,84 @@
           <div class="lvl-xp"><span id="xp-cur">0</span>/<span id="xp-next">0</span> XP</div>
         </div>
       </div>
+
+      <div class="section-title">
+        <div class="title-left">
+          <div class="hex">⬡</div>
+          <div>
+            <div class="h1">Attributes</div>
+            <div class="hint">Long press a tile to edit or delete.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card radar-card">
+        <svg id="radar" viewBox="-60 -60 120 120" width="100%" height="260" class="radar-svg"></svg>
+      </div>
+
+      <div class="grid-3" id="attr-grid"></div>
+    </section>
+
+    <!-- QUESTS -->
+    <section id="screen-quests" class="screen">
+      <div class="section-title"><div class="h1">Quests</div></div>
+      <div class="filters-row">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="active">Active</button>
+        <button class="chip" data-filter="completed">Done</button>
+        <button class="chip" data-filter="expired">Expired</button>
+      </div>
+      <div id="quest-list" class="list"></div>
+      <div id="empty-note" class="empty">No quests yet. Tap ＋ to create one.</div>
+    </section>
+
+    <!-- CREATE / EDIT QUEST -->
+    <section id="screen-create" class="screen">
+      <div class="section-title"><div class="h1">New Quest</div></div>
+      <form id="quest-form" class="card form" autocomplete="off">
+        <label>Title <input id="q-title" required></label>
+        <label>Description <input id="q-desc" placeholder="Optional"></label>
+        <label>Type
+          <select id="q-type">
+            <option value="timer">Timer</option>
+            <option value="counter">Counter</option>
+            <option value="checklist">Checklist</option>
+          </select>
+        </label>
+        <div class="if timer"><label>Duration (minutes) <input id="q-duration" type="number" min="1" value="30"></label></div>
+        <div class="if counter"><label>Target Count <input id="q-target" type="number" min="1" value="10"></label></div>
+        <div class="if checklist"><label>Checklist (comma separated) <input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
+        <label>Deadline <input id="q-deadline" type="datetime-local"></label>
+        <label>Repeat
+          <select id="q-repeat">
+            <option value="none">None</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </label>
+        <label>Reward XP <input id="q-xp" type="number" min="0" value="25"></label>
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Save</button>
+          <button type="button" id="btn-cancel" class="btn">Cancel</button>
+        </div>
+      </form>
     </section>
   </main>
+
+  <!-- Bottom tabs -->
+  <nav class="tabs">
+    <button id="tab-quests" class="tab"><div>✓</div><span>Quest</span></button>
+    <button id="tab-journey" class="tab"><div>🗺️</div><span>Journey</span></button>
+    <button id="tab-character" class="tab active"><div>👤</div><span>Character</span></button>
+    <button id="tab-store" class="tab"><div>🎁</div><span>Store</span></button>
+    <button id="tab-focus" class="tab"><div>⏱</div><span>Focus</span></button>
+  </nav>
+
   <script src="app.js"></script>
-  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    }
+  </script>
 </body>
 </html>
