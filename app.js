@@ -11,7 +11,7 @@ const defaultState={
   quests:[], shop:[], lastId:0, lastDailyKey:null,
   stats:{completed:0,goldEarned:0,xpEarned:0,apEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
 };
-let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full', JSON.stringify(state)); }
+let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v2'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v2', JSON.stringify(state)); }
 
 // ===== curves & rewards =====
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
@@ -24,16 +24,13 @@ function grantAP(a){ const n=Math.max(0,Math.round(a)); state.player.ap=(state.p
 // ===== UI: Level/Wallet/Attrs =====
 function renderWallet(){ $('#gold').textContent=state.player.gold||0; $('#gold2').textContent=state.player.gold||0; $('#ap').textContent=state.player.ap||0; }
 function renderLevel(){ const p=state.player; $('#level-num').textContent=p.level; const rk=rankForLevel(p.level); $('#rank-text').textContent=rk; $('#rank-badge').textContent=rk; $('#xp-cur').textContent=p.xp; $('#xp-next').textContent=p.xpNext; $('#xp-fill').style.width=Math.max(0,Math.min(100,(p.xp/p.xpNext)*100))+'%'; }
-const radarLabels=["Financial","Physical","Psyche","Intellect","Social","Spiritual"];
-function renderRadar(){ const svg=$('#radar'); svg.innerHTML=''; const rings=5,R=48; 
-  function poly(r,stroke){ const pts=radarLabels.map((_,i)=>{ const a=(Math.PI*2/radarLabels.length)*i-Math.PI/2; return [Math.cos(a)*r,Math.sin(a)*r];}); const g=document.createElementNS('http://www.w3.org/2000/svg','polygon'); g.setAttribute('points',pts.map(p=>p.join(',')).join(' ')); g.setAttribute('fill','none'); g.setAttribute('stroke',stroke); g.setAttribute('stroke-width','0.6'); return g; }
-  function line(x1,y1,x2,y2,stroke){ const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',stroke);l.setAttribute('stroke-width','0.6'); svg.appendChild(l); }
-  for(let i=1;i<=rings;i++){ svg.appendChild(poly(R*i/rings,'#222')); }
-  radarLabels.forEach((lab,i)=>{ const a=(Math.PI*2/radarLabels.length)*i-Math.PI/2; line(0,0,Math.cos(a)*R,Math.sin(a)*R,'#222'); const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',Math.cos(a)*(R+12)); t.setAttribute('y',Math.sin(a)*(R+12)); t.setAttribute('fill','#a0a0a0'); t.setAttribute('font-size','5'); t.setAttribute('text-anchor','middle'); t.textContent=lab; svg.appendChild(t); });
-  const pts=radarLabels.map((lab,i)=>{ const val=Math.max(0,Math.min(100,state.attrs[lab]||0)); const a=(Math.PI*2/radarLabels.length)*i-Math.PI/2; const r=(val/100)*R; return [Math.cos(a)*r, Math.sin(a)*r]; });
-  const p=document.createElementNS('http://www.w3.org/2000/svg','polygon'); p.setAttribute('points',pts.map(p=>p.join(',')).join(' ')); p.setAttribute('fill','#4da3ff22'); p.setAttribute('stroke','#4da3ff'); p.setAttribute('stroke-width','1.5'); svg.appendChild(p);
+function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div><button class="plus">＋</button>`; tile.querySelector('.plus').onclick=()=>{ if((state.player.ap||0)<=0) return alert('No attribute points to spend.'); state.attrs[lab]=(state.attrs[lab]||0)+1; state.player.ap--; save(); renderTiles(); drawRadar(); renderWallet(); }; grid.appendChild(tile);} }
+function drawRadar(){ const c=$('#radar'); const ctx=c.getContext('2d'); const W=c.width, H=c.height; ctx.clearRect(0,0,W,H); const centerX=W/2, centerY=H/2+10, R=80; const labs=["Financial","Physical","Psyche","Intellect","Social","Spiritual"]; // grid
+  ctx.strokeStyle='#222'; for(let ring=1; ring<=5; ring++){ ctx.beginPath(); for(let i=0;i<labs.length;i++){ const a=(Math.PI*2/labs.length)*i - Math.PI/2; const r=R*ring/5; const x=centerX+Math.cos(a)*r; const y=centerY+Math.sin(a)*r; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); ctx.stroke(); }
+  for(let i=0;i<labs.length;i++){ const a=(Math.PI*2/labs.length)*i - Math.PI/2; ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(centerX+Math.cos(a)*R, centerY+Math.sin(a)*R); ctx.stroke(); ctx.fillStyle='#a0a0a0'; ctx.font='12px system-ui'; ctx.textAlign='center'; ctx.fillText(labs[i], centerX+Math.cos(a)*(R+16), centerY+Math.sin(a)*(R+16)); }
+  // polygon
+  ctx.beginPath(); for(let i=0;i<labs.length;i++){ const val=Math.max(0,Math.min(100,(state.attrs[labs[i]]||0))); const a=(Math.PI*2/labs.length)*i - Math.PI/2; const x=centerX+Math.cos(a)*(R*val/100); const y=centerY+Math.sin(a)*(R*val/100); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); ctx.fillStyle='rgba(77,163,255,0.15)'; ctx.fill(); ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2; ctx.stroke();
 }
-function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div><button class="plus">＋</button>`; tile.querySelector('.plus').onclick=()=>{ if((state.player.ap||0)<=0) return alert('No attribute points to spend.'); state.attrs[lab]=Math.min(100,(state.attrs[lab]||0)+1); state.player.ap--; save(); renderTiles(); renderRadar(); renderWallet(); }; grid.appendChild(tile); } }
 
 // ===== Navigation =====
 function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $('#screen-'+name).classList.add('visible'); $$('.tab').forEach(t=>t.classList.remove('active')); if(name==='character') $('#tab-character').classList.add('active'); if(name==='quests') $('#tab-quests').classList.add('active'); if(name==='store') $('#tab-store').classList.add('active'); if(name==='focus') $('#tab-focus').classList.add('active'); if(name==='journey') $('#tab-journey').classList.add('active'); }
@@ -174,17 +171,12 @@ const PENALTY_TEMPLATES=[
   {title:'Penalty — 20 minute brisk walk', type:'timer', mins:20, diff:'normal', xp:18}
 ];
 function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
-function generateDailySet(dayKey){ const howMany = 3 + Math.floor(Math.random()*2); const picks = pickRandom(DAILY_TEMPLATES, howMany); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); } q.deadline = endOfToday(); state.quests.push(q);} }
-function generatePenaltiesFor(dayKeyMissed){ const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed); if(!missed.length) return; const count = Math.min(3, missed.length); const picks = pickRandom(PENALTY_TEMPLATES, count); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey() }; if(t.type==='timer'){ q.durationMs=(t.mins||1)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); } q.deadline = endOfToday(); state.quests.push(q);} }
-
-function onNewDay(prevKey, currentKey){
-  if(prevKey){ const didCompleteYesterday = state.stats.lastCompletionDay === prevKey; state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0; state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak); generatePenaltiesFor(prevKey); }
-  generateDailySet(currentKey);
-  state.lastDailyKey = currentKey; save();
-}
+function generateDailySet(dayKey){ const howMany = 3 + Math.floor(Math.random()*2); const picks = pickRandom(DAILY_TEMPLATES, howMany); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); } state.quests.push(q);} }
+function generatePenaltiesFor(dayKeyMissed){ const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed); if(!missed.length) return; const count = Math.min(3, missed.length); const picks = pickRandom(PENALTY_TEMPLATES, count); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||1)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); } state.quests.push(q);} }
+function onNewDay(prevKey, currentKey){ if(prevKey){ const didCompleteYesterday = state.stats.lastCompletionDay === prevKey; state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0; state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak); generatePenaltiesFor(prevKey);} generateDailySet(currentKey); state.lastDailyKey = currentKey; save(); }
 
 // ===== Shop =====
-function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if((state.player.gold||0) < it.cost) return alert('Not enough gold.'); state.player.gold -= it.cost; save(); renderWallet(); notify('Purchased', `You bought: ${it.title}`); }; node.querySelector('.del').onclick=()=>{ state.shop = state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node);} }
+function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold>=it.cost){ state.player.gold-=it.cost; save(); renderWallet(); } else alert('Not enough gold'); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node);} }
 $('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
 document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
 
@@ -213,7 +205,7 @@ function renderJourney(){
   $('#j-level').textContent = `Lv ${state.player.level} (${rankForLevel(state.player.level)})`;
   $('#j-xp').style.width = Math.max(0,Math.min(100,(state.player.xp/state.player.xpNext)*100))+'%';
   $('#j-completed').textContent = `${state.stats.completed} total`;
-  const completePct = Math.min(1, state.stats.completed/50); // visualize to 50
+  const completePct = Math.min(1, state.stats.completed/50);
   $('#j-complete-bar').style.width = (completePct*100)+'%';
   $('#j-streak').textContent = `${state.stats.currentStreak} (best ${state.stats.longestStreak})`;
   $('#j-streak-bar').style.width = Math.min(100, state.stats.currentStreak*10)+'%';
@@ -233,8 +225,7 @@ function init(){
   state.player.xpNext = xpToNext(state.player.level);
   const today = todayKey();
   if(state.lastDailyKey !== today){ onNewDay(state.lastDailyKey, today); }
-
-  renderWallet(); renderLevel(); renderRadar(); renderTiles(); renderQuests('all'); renderShop(); renderJourney();
+  renderWallet(); renderLevel(); renderTiles(); drawRadar(); renderQuests('all'); renderShop(); renderJourney();
   if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 800); }
 }
 window.addEventListener('DOMContentLoaded', init);
