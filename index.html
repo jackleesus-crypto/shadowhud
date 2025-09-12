@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Shadow HUD</title>
+  <title>Shadow HUD v11.1</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,8 +13,8 @@
 </head>
 <body class="app">
   <header class="appbar">
-    <button id="btn-gear" class="icon">⚙︎</button>
-    <div id="appbar-title">Character</div>
+    <div id="appbar-title">ShadowHUD <span class="ver">v11.1</span></div>
+    <div class="spacer"></div>
     <button id="btn-plus" class="icon">＋</button>
   </header>
 
@@ -50,9 +50,7 @@
     </section>
 
     <section id="screen-quests" class="screen">
-      <div class="section-header">
-        <div class="h1">Quests</div>
-      </div>
+      <div class="section-header"><div class="h1">Quests</div></div>
       <div class="filters-row">
         <button class="chip active" data-filter="all">All</button>
         <button class="chip" data-filter="daily">Daily</button>
@@ -120,7 +118,6 @@
           <button type="button" id="btn-cancel" class="btn">Cancel</button>
         </div>
       </form>
-      <div class="card tiny hint">Daily badges moved above titles so they never overlap your quest info.</div>
     </section>
 
     <section id="screen-store" class="screen">

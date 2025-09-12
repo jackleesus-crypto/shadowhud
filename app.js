@@ -1,4 +1,3 @@
-// Full v11 logic (matches the earlier functional build)
 
 const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
 function notify(title, body){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ try{ registration && registration.showNotification ? registration.showNotification(title,{body}) : new Notification(title,{body}); }catch(e){} } }
@@ -34,18 +33,18 @@ function drawRadar(){ const c=$('#radar'); const ctx=c.getContext('2d'); const W
 function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div>`; grid.appendChild(tile); } drawRadar(); }
 
 function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $('#screen-'+name).classList.add('visible'); $$('.tab').forEach(t=>t.classList.remove('active')); if(name==='character') $('#tab-character').classList.add('active'); if(name==='quests') $('#tab-quests').classList.add('active'); if(name==='store') $('#tab-store').classList.add('active'); if(name==='focus') $('#tab-focus').classList.add('active'); if(name==='journey') $('#tab-journey').classList.add('active'); }
-$('#tab-character').onclick=()=>{ $('#appbar-title').textContent='Character'; show('character'); };
-$('#tab-quests').onclick=()=>{ $('#appbar-title').textContent='Quests'; show('quests'); };
-$('#tab-store').onclick=()=>{ $('#appbar-title').textContent='Store'; show('store'); renderShop(); };
-$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='Focus'; show('focus'); updateFocusUI(); };
-$('#tab-journey').onclick=()=>{ $('#appbar-title').textContent='Journey'; show('journey'); renderJourney(); };
-$('#btn-plus').onclick=()=>{ resetForm(); show('create'); $('#appbar-title').textContent='New/Edit Quest'; };
-$('#btn-cancel').onclick=()=>{ show('quests'); $('#appbar-title').textContent='Quests'; };
+$('#tab-character').onclick=()=>{ show('character'); };
+$('#tab-quests').onclick=()=>{ show('quests'); };
+$('#tab-store').onclick=()=>{ show('store'); renderShop(); };
+$('#tab-focus').onclick=()=>{ show('focus'); updateFocusUI(); };
+$('#tab-journey').onclick=()=>{ show('journey'); renderJourney(); };
+$('#btn-plus').onclick=()=>{ resetForm(); show('create'); };
+$('#btn-cancel').onclick=()=>{ show('quests'); };
 
 function currentFilter(){ return document.querySelector('.chip.active')?.dataset.filter || 'all'; }
 $$('.chip').forEach(c=>c.onclick=()=>{ $$('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); renderQuests(c.dataset.filter); });
 
-function tagRowHTML(q){ const chips=[]; if(q.daily) chips.push('<span class="badge">Daily</span>'); if(q.penalty) chips.push('<span class="badge pen">Penalty</span>'); return chips.length? `<div class="tag-row">${chips.join('')}</div>` : ''; }
+function tagRowHTML(q){ const chips=[]; if(q.daily) chips.push('<span class="badge">Daily</span>'); if(q.penalty) chips.push('<span class="badge">Penalty</span>'); return chips.length? `<div class="tag-row">${chips.join(' ')}</div>` : ''; }
 function countdownText(ts){ if(!ts) return ''; const ms=Math.max(0, ts-Date.now()); const s=Math.floor(ms/1000); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}`; }
 
 function renderQuests(filter='all'){
@@ -76,17 +75,21 @@ function renderQuests(filter='all'){
       <div class="q-actions">
         <button class="btn small start hidden">Start</button>
         <button class="btn small complete">Done</button>
-        <button class="btn small ghost reset">Reset</button>
-        <button class="btn small ghost pause hidden">Pause</button>
-        <button class="btn small ghost resume hidden">Resume</button>
-        <button class="btn small ghost inc hidden">+1</button>
-        <button class="btn small ghost dec hidden">−1</button>
+        <button class="btn small">Reset</button>
+        <button class="btn small pause hidden">Pause</button>
+        <button class="btn small resume hidden">Resume</button>
+        <button class="btn small inc hidden">+1</button>
+        <button class="btn small dec hidden">−1</button>
         <div class="spacer"></div>
-        <button class="btn small ghost edit">Edit</button>
-        <button class="btn small ghost delete">Delete</button>
+        <button class="btn small edit">Edit</button>
+        <button class="btn small delete">Delete</button>
       </div>`;
     const sub=node.querySelector('.q-sub'); const fill=node.querySelector('.q-fill');
-    const btnS=node.querySelector('.start'); const btnC=node.querySelector('.complete'); const btnP=node.querySelector('.pause'); const btnR=node.querySelector('.resume'); const btnI=node.querySelector('.inc'); const btnD=node.querySelector('.dec'); const btnE=node.querySelector('.edit'); const btnDel=node.querySelector('.delete'); const btnReset=node.querySelector('.reset');
+    const btnS=node.querySelector('.start'); const btnC=node.querySelector('.complete'); 
+    const btnP=node.querySelector('.pause'); const btnR=node.querySelector('.resume'); 
+    const btnI=node.querySelector('.inc'); const btnD=node.querySelector('.dec'); 
+    const btnE=node.querySelector('.edit'); const btnDel=node.querySelector('.delete'); 
+    const btnReset=node.querySelectorAll('.btn')[2];
 
     if(q.type==='timer'){
       if(!q.started){ sub.textContent='Not started'; btnS.classList.remove('hidden'); }
@@ -107,9 +110,9 @@ function renderQuests(filter='all'){
         <div class="multi-row" data-idx="${idx}">
           <div class="lbl">${m.label}</div>
           <div class="val">${m.count||0} / ${m.target}</div>
-          <button class="btn small ghost mfinish">Finish</button>
-          <button class="btn small ghost mdec">−1</button>
-          <button class="btn small ghost minc">+1</button>
+          <button class="btn small mfinish">Finish</button>
+          <button class="btn small mdec">−1</button>
+          <button class="btn small minc">+1</button>
         </div>`).join('');
       sub.innerHTML = `<div class="multi">${rows}</div>`;
       sub.querySelectorAll('.multi-row').forEach(row=>{
@@ -127,12 +130,13 @@ function renderQuests(filter='all'){
     if(btnR) btnR.onclick=()=>{ if(q.paused){ const pausedFor=Date.now()-(q.pauseTs||Date.now()); q.endTs+=pausedFor; q.paused=false; save(); renderQuests(filter);} };
     if(btnI) btnI.onclick=()=>{ q.count=Math.min(q.target,(q.count||0)+1); if(q.count>=q.target && !q.completed){ finishQuest(q, filter); } else { save(); renderQuests(filter);} };
     if(btnD) btnD.onclick=()=>{ q.count=Math.max(0,(q.count||0)-1); save(); renderQuests(filter); };
-    btnE.onclick=()=>{ populateForm(q); show('create'); $('#appbar-title').textContent='Edit Quest'; };
+    btnE.onclick=()=>{ populateForm(q); show('create'); };
     btnDel.onclick=()=>{ state.quests=state.quests.filter(x=>x.id!==q.id); save(); renderQuests(filter); };
 
     list.appendChild(node);
   }
 }
+
 function rewardXP(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round((q.xp||0)*m); }
 function rewardGold(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round(10*m); }
 function rewardAttr(q){ return ATTR_REWARD[q.diff||'normal']||1; }
@@ -159,6 +163,7 @@ function finishQuest(q, filter){
   }
   save(); renderQuests(filter); renderTiles(); drawRadar(); renderJourney();
 }
+
 setInterval(()=>{ let touched=false; for(const q of state.quests){ if(q.type==='timer' && q.started && !q.completed && !q.paused && timerRemaining(q)<=0){ finishQuest(q, currentFilter()); touched=true; } } if(touched){ save(); renderQuests(currentFilter()); } },1000);
 setInterval(()=>{ renderQuests(currentFilter()); },1000);
 function timerRemaining(q){ if(q.paused) return Math.max(0,q.endTs-(q.pauseTs||Date.now())); return Math.max(0,(q.endTs||0)-Date.now()); }
@@ -178,9 +183,10 @@ document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
   if(t==='checklist'){ quest.items=$('#q-items').value.split(',').map(s=>s.trim()).filter(Boolean); quest.done = editingId ? (state.quests.find(x=>x.id===quest.id)?.done||quest.items.map(()=>false)) : quest.items.map(()=>false); }
   if(t==='multicounter'){ quest.metrics = $('#q-multi').value.split(',').map(s=>s.trim()).filter(Boolean).map(pair=>{ const p=pair.split(':'); const label=p[0].trim(); const target=Math.max(1, Number(p[1])||1); const existing=editingId? (state.quests.find(x=>x.id===quest.id)?.metrics||[]):[]; const found=existing.find(m=>m.label===label); return {label,target,count:found?found.count:0}; }); }
   if(editingId){ const idx=state.quests.findIndex(x=>x.id===quest.id); state.quests[idx]=quest; } else { state.quests.push(quest); }
-  save(); renderQuests(currentFilter()); show('quests'); $('#appbar-title').textContent='Quests';
+  save(); renderQuests(currentFilter()); show('quests');
 });
 
+// Daily/penalty logic
 const DAILY_TEMPLATES=[
   {title:'Meditate for 10 minutes', attr:'Spiritual', type:'timer', mins:10, diff:'easy', xp:12},
   {title:'Read 15 pages of a book', attr:'Intellect', type:'counter', target:15, diff:'normal', xp:20},
@@ -238,9 +244,7 @@ function generatePenaltiesFor(dayKeyMissed){
     state.quests.push(q);
   }
 }
-def_delete_msg = "delete unfinished";  # just to keep bundle deterministic
-def_delete_msg
-def deleteUnfinishedDaily(dayKeyMissed):
+function deleteUnfinishedDaily(dayKeyMissed){
   state.quests = state.quests.filter(q=> !(q.daily && q.dayKey===dayKeyMissed && !q.completed) );
 }
 function onNewDay(prevKey, currentKey){
@@ -257,7 +261,7 @@ function onNewDay(prevKey, currentKey){
   save();
 }
 
-function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold<(it.cost||0)) return alert('Not enough gold'); state.player.gold-=it.cost||0; save(); renderWallet(); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
+function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold<(it.cost||0)) return alert('Not enough gold'); state.player.gold-=it.cost||0; save(); renderWallet(); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
 $('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
 document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
 
@@ -295,7 +299,7 @@ const ACH = [
   {id:'lv50',  name:'Veteran',    desc:'Reach Level 50',  check: s=>s.player.level>=50},
   {id:'lv100', name:'Shadow Monarch', desc:'Reach Level 100', check: s=>s.player.level>=100},
   {id:'q10',   name:'Getting Things Done', desc:'Complete 10 quests', check: s=>s.stats.completed>=10},
-  {id:'q50',   name:'Task Slayer', desc:'Complete 50 quests', check: s=>s.stats.completed>=50},
+  {id:'q50',   name:'Task Slayer', check: s=>s.stats.completed>=50},
   {id:'gold1', name:'Shopper',     desc:'Earn 500 gold total', check: s=>s.stats.goldEarned>=500},
   {id:'streak3', name:'Consistency', desc:'3-day streak', check: s=>s.stats.longestStreak>=3},
   {id:'streak7', name:'Iron Will', desc:'7-day streak', check: s=>s.stats.longestStreak>=7},
