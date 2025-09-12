@@ -11,7 +11,7 @@ const defaultState={
   quests:[], shop:[], lastId:0, lastDailyKey:null,
   stats:{completed:0,goldEarned:0,xpEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
 };
-let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v5'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v5', JSON.stringify(state)); }
+let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v7'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v7', JSON.stringify(state)); }
 
 // ===== curves & rewards =====
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
@@ -96,6 +96,24 @@ function renderQuests(filter='all'){
       const pct=Math.min(1,(q.count||0)/q.target); fill.style.width=(pct*100)+'%'; sub.textContent=`Count ${q.count||0}/${q.target}`; btnI.classList.remove('hidden'); btnD.classList.remove('hidden');
     } else if(q.type==='checklist'){
       const done=(q.done||[]).filter(Boolean).length, total=(q.items||[]).length; const pct=total?done/total:0; fill.style.width=(pct*100)+'%'; sub.textContent=`${done}/${total} items`;
+    } else if(q.type==='multicounter'){
+      const total = q.metrics.reduce((s,m)=>s+m.target,0);
+      const have  = q.metrics.reduce((s,m)=>s+Math.min(m.count||0,m.target),0);
+      const pct   = total? have/total : 0;
+      fill.style.width=(pct*100)+'%';
+      const rows = q.metrics.map((m,idx)=>`
+        <div class="multi-row" data-idx="${idx}">
+          <div class="lbl">${m.label}</div>
+          <div class="val">${m.count||0} / ${m.target}</div>
+          <button class="btn small ghost mdec">−1</button>
+          <button class="btn small ghost minc">+1</button>
+        </div>`).join('');
+      sub.innerHTML = `<div class="multi">${rows}</div>`;
+      sub.querySelectorAll('.multi-row').forEach(row=>{
+        const i=Number(row.dataset.idx);
+        row.querySelector('.minc').onclick=()=>{ q.metrics[i].count=Math.min(q.metrics[i].target,(q.metrics[i].count||0)+1); save(); renderQuests(filter); if(q.metrics.every(m=>(m.count||0)>=m.target)&&!q.completed){ finishQuest(q, filter);} };
+        row.querySelector('.mdec').onclick=()=>{ q.metrics[i].count=Math.max(0,(q.metrics[i].count||0)-1); save(); renderQuests(filter); };
+      });
     }
 
     btnS.onclick=()=>{ const now=Date.now(); q.startTs=now; q.endTs=now+(q.durationMs||0); q.started=true; q.paused=false; save(); renderQuests(filter); };
@@ -128,6 +146,7 @@ function finishQuest(q, filter){
     if(q.type==='timer'){ next.started=false; next.paused=false; delete next.startTs; delete next.endTs; delete next.pauseTs; }
     if(q.type==='counter'){ next.count=0; }
     if(q.type==='checklist'){ next.done=(q.items||[]).map(()=>false); }
+    if(q.type==='multicounter'){ next.metrics=next.metrics.map(m=>({label:m.label,target:m.target,count:0})); }
     if(q.deadline){ const d=new Date(q.deadline); if(q.repeat==='daily') d.setDate(d.getDate()+1); if(q.repeat==='weekly') d.setDate(d.getDate()+7); next.deadline=d.getTime(); }
     state.quests.push(next);
   }
@@ -138,8 +157,8 @@ function timerRemaining(q){ if(q.paused) return Math.max(0,q.endTs-(q.pauseTs||D
 function formatTime(ms){ const s=Math.max(0,Math.ceil(ms/1000)); const m=Math.floor(s/60); const ss=(''+(s%60)).padStart(2,'0'); const mm=(''+(m%60)).padStart(2,'0'); const hh=Math.floor(m/60); return hh>0?`${hh}:${mm}:${ss}`:`${m}:${ss}`; }
 
 // ===== Quest form =====
-function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; updateTypeFields(); }
-function populateForm(q){ const f=$('#quest-form'); f.dataset.editing=String(q.id); $('#q-title').value=q.title; $('#q-desc').value=q.desc||''; $('#q-attr').value=q.attr||'Physical'; $('#q-type').value=q.type; $('#q-diff').value=q.diff||'normal'; $('#q-duration').value=Math.round((q.durationMs||0)/60000)||30; $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', '); $('#q-deadline').value=q.deadline? new Date(q.deadline).toISOString().slice(0,16):''; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-remind').value=q.remindMin||10; updateTypeFields(); }
+function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-multi').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; updateTypeFields(); }
+function populateForm(q){ const f=$('#quest-form'); f.dataset.editing=String(q.id); $('#q-title').value=q.title; $('#q-desc').value=q.desc||''; $('#q-attr').value=q.attr||'Physical'; $('#q-type').value=q.type; $('#q-diff').value=q.diff||'normal'; $('#q-duration').value=Math.round((q.durationMs||0)/60000)||30; $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', '); $('#q-multi').value=(q.metrics||[]).map(m=>`${m.label}:${m.target}`).join(', '); $('#q-deadline').value=q.deadline? new Date(q.deadline).toISOString().slice(0,16):''; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-remind').value=q.remindMin||10; updateTypeFields(); }
 $('#q-type').onchange=updateTypeFields; function updateTypeFields(){ const t=$('#q-type').value; $$('.if').forEach(el=>el.classList.remove('show')); $$('.if.'+t).forEach(el=>el.classList.add('show')); }
 document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
   ev.preventDefault();
@@ -150,6 +169,7 @@ document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
   if(t==='timer'){ const mins=Math.max(1, Number($('#q-duration').value)||30); quest.durationMs=mins*60000; quest.started=false; quest.paused=false; }
   if(t==='counter'){ quest.target=Math.max(1, Number($('#q-target').value)||10); quest.count = editingId ? (state.quests.find(x=>x.id===quest.id)?.count||0):0; }
   if(t==='checklist'){ quest.items=$('#q-items').value.split(',').map(s=>s.trim()).filter(Boolean); quest.done = editingId ? (state.quests.find(x=>x.id===quest.id)?.done||quest.items.map(()=>false)) : quest.items.map(()=>false); }
+  if(t==='multicounter'){ quest.metrics = $('#q-multi').value.split(',').map(s=>s.trim()).filter(Boolean).map(pair=>{ const p=pair.split(':'); const label=p[0].trim(); const target=Math.max(1, Number(p[1])||1); const existing=editingId? (state.quests.find(x=>x.id===quest.id)?.metrics||[]):[]; const found=existing.find(m=>m.label===label); return {label,target,count:found?found.count:0}; }); }
   if(editingId){ const idx=state.quests.findIndex(x=>x.id===quest.id); state.quests[idx]=quest; } else { state.quests.push(quest); }
   save(); renderQuests(currentFilter()); show('quests'); $('#appbar-title').textContent='Quests';
 });
@@ -166,6 +186,22 @@ const DAILY_TEMPLATES=[
   {title:'Call or text a loved one', attr:'Social', type:'counter', target:1, diff:'easy', xp:10},
   {title:'Cook a healthy meal', attr:'Physical', type:'checklist', items:['Prep','Cook','Clean'], diff:'normal', xp:25}
 ];
+
+// Strength Training as a SINGLE multicounter quest
+const STRENGTH_MULTI={
+  title:'Strength Training',
+  attr:'Physical',
+  type:'multicounter',
+  diff:'elite',
+  xp:120,
+  metrics:[
+    {label:'Pushups', target:100, count:0},
+    {label:'Sit-ups', target:100, count:0},
+    {label:'Squats',  target:100, count:0},
+    {label:'Run (miles)', target:1, count:0}
+  ]
+};
+
 const PENALTY_TEMPLATES=[
   {title:'Penalty — Do 50 pushups', attr:'Physical', type:'counter', target:50, diff:'hard', xp:18},
   {title:'Penalty — 60-second cold shower', attr:'Psyche', type:'timer', mins:1, diff:'hard', xp:16},
@@ -173,14 +209,59 @@ const PENALTY_TEMPLATES=[
   {title:'Penalty — 100 squats', attr:'Physical', type:'counter', target:100, diff:'elite', xp:30},
   {title:'Penalty — 20 minute brisk walk', attr:'Physical', type:'timer', mins:20, diff:'normal', xp:18}
 ];
-function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
-function generateDailySet(dayKey){ const howMany = 3; const picks = pickRandom(DAILY_TEMPLATES, howMany); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items).map(()=>false); } state.quests.push(q); } }
-function generatePenaltiesFor(dayKeyMissed){ const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed); if(!missed.length) return; const count = Math.min(3, missed.length); const picks = pickRandom(PENALTY_TEMPLATES, count); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items).map(()=>false); } state.quests.push(q); } }
 
-function onNewDay(prevKey, currentKey){ if(prevKey){ const didCompleteYesterday = state.stats.lastCompletionDay === prevKey; state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0; state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak); generatePenaltiesFor(prevKey);} generateDailySet(currentKey); state.lastDailyKey = currentKey; save(); }
+function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
+
+function ensureStrengthTraining(dayKey){
+  const exists = state.quests.some(q=>q.daily && q.dayKey===dayKey && q.title==='Strength Training');
+  if(exists) return;
+  const base = JSON.parse(JSON.stringify(STRENGTH_MULTI));
+  base.id=++state.lastId; base.completed=false; base.remindMin=10; base.daily=true; base.penalty=false; base.dayKey=dayKey; base.deadline=endOfToday();
+  state.quests.push(base);
+}
+
+function generateDailySet(dayKey){
+  ensureStrengthTraining(dayKey);
+  const already = new Set(state.quests.filter(q=>q.daily && q.dayKey===dayKey).map(q=>q.title));
+  const pool = DAILY_TEMPLATES.filter(t=>!already.has(t.title));
+  const picks = pickRandom(pool, Math.min(2, pool.length));
+  for(const t of picks){
+    const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() };
+    if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; }
+    if(t.type==='counter'){ q.target=t.target||1; q.count=0; }
+    if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); }
+    state.quests.push(q);
+  }
+}
+
+function generatePenaltiesFor(dayKeyMissed){
+  const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed);
+  if(!missed.length) return;
+  const count = Math.min(3, missed.length);
+  const picks = pickRandom(PENALTY_TEMPLATES, count);
+  for(const t of picks){
+    const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() };
+    if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; }
+    if(t.type==='counter'){ q.target=t.target||1; q.count=0; }
+    if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); }
+    state.quests.push(q);
+  }
+}
+
+function onNewDay(prevKey, currentKey){
+  if(prevKey){
+    const didCompleteYesterday = state.stats.lastCompletionDay === prevKey;
+    state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0;
+    state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak);
+    generatePenaltiesFor(prevKey);
+  }
+  generateDailySet(currentKey);
+  state.lastDailyKey = currentKey;
+  save();
+}
 
 // ===== Shop =====
-function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold>=it.cost){ state.player.gold-=it.cost; save(); renderWallet(); } else alert('Not enough gold!'); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
+function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold<(it.cost||0)) return alert('Not enough gold'); state.player.gold-=it.cost||0; save(); renderWallet(); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
 $('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
 document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
 
