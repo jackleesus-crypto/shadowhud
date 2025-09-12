@@ -32,16 +32,13 @@
 .lvl-title{font-weight:800}.lvl-sub{font-size:12px;color:var(--muted)}.lvl-right{min-width:48%;display:grid;gap:6px}.lvl-bar{height:10px;border-radius:999px;background:#0d0d0d;border:1px solid var(--line);overflow:hidden}
 #xp-fill{height:100%;width:0%;background:linear-gradient(90deg,#5ac8fa,#7b61ff)}.lvl-xp{font-size:12px;color:var(--muted);text-align:right}
 .row-top{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}.pill{background:#101010;border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:#fff;font-size:12px}
-/* Badges top-right */
 .badges{position:absolute;top:8px;right:10px;display:flex;gap:6px}
 .badge{background:#111;border:1px solid #333;color:#fff;border-radius:999px;padding:3px 8px;font-size:11px;opacity:.95}
 .badge.pen{border-color:#884}
-/* Journey bars */
 .metric{display:flex;justify-content:space-between;margin-top:6px;font-size:14px}
 .bar{height:8px;background:#0d0d0d;border:1px solid #222;border-radius:999px;overflow:hidden;margin:6px 0 8px}
 .bar>div{height:100%;background:linear-gradient(90deg,#5ac8fa,#7b61ff);width:0%}
 .ach-list{display:grid;gap:8px}
 .ach{display:flex;justify-content:space-between;align-items:center;background:#101010;border:1px solid #222;border-radius:12px;padding:10px}
 .ach.done{border-color:#2ecc71}
-/* focus */
-.focus-card{display:grid;gap:10px}.focus-time{font-size:32px;font-weight:900;text-align:center}.lock{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(2px);display:grid;place-items:center;font-weight:800;font-size:18px;z-index:50}
+.focus-card{display:grid;gap:10px}.focus-time{font-size:32px;font-weight:900;text-align:center}

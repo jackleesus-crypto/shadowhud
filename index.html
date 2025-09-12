@@ -19,7 +19,6 @@
   </header>
 
   <main class="content">
-    <!-- CHARACTER -->
     <section id="screen-character" class="screen visible">
       <div class="row-top">
         <div class="pill">💰 <span id="gold">0</span> Gold</div>
@@ -50,7 +49,6 @@
       </div>
     </section>
 
-    <!-- QUESTS -->
     <section id="screen-quests" class="screen">
       <div class="section-header">
         <div class="h1">Quests</div>
@@ -67,9 +65,8 @@
       <div id="empty-note" class="empty">No quests yet. Tap ＋ to create one.</div>
     </section>
 
-    <!-- CREATE / EDIT QUEST -->
     <section id="screen-create" class="screen">
-      <div class="section-title"><div class="h1">New Quest</div></div>
+      <div class="section-title"><div class="h1">New/Edit Quest</div></div>
       <form id="quest-form" class="card form" autocomplete="off">
         <label>Title <input id="q-title" required></label>
         <label>Description <input id="q-desc" placeholder="Optional"></label>
@@ -116,16 +113,16 @@
           </select>
         </label>
         <label>Base Reward XP <input id="q-xp" type="number" min="0" value="25"></label>
+        <label>Reminder times (HH:MM, comma) <input id="q-remindtimes" placeholder="07:00, 12:30, 20:00"></label>
         <label>Notify before deadline (minutes) <input id="q-remind" type="number" min="0" value="10"></label>
         <div class="form-actions">
           <button type="submit" class="btn primary">Save</button>
           <button type="button" id="btn-cancel" class="btn">Cancel</button>
         </div>
       </form>
-      <div class="card tiny hint">Timer quests have a Start button. Multi-counter shows each sub-target with +/− and Finish.</div>
+      <div class="card tiny hint">Focus tab no longer locks the app. Reminders fire locally at the specified times (allow notifications).</div>
     </section>
 
-    <!-- STORE -->
     <section id="screen-store" class="screen">
       <div class="section-title"><div class="h1">Store</div></div>
       <div class="row-top">
@@ -147,7 +144,6 @@
       </form>
     </section>
 
-    <!-- FOCUS -->
     <section id="screen-focus" class="screen">
       <div class="section-title"><div class="h1">Focus</div></div>
       <div class="card focus-card">
@@ -160,11 +156,9 @@
           <button id="focus-cancel" class="btn">Cancel</button>
         </div>
       </div>
-      <div class="hint">While focusing, the rest of the app is locked until the timer ends.</div>
-      <div id="lock-overlay" class="lock hidden"><div>🔒 Focus mode active</div></div>
+      <div class="hint">Simple timer. No lock overlay.</div>
     </section>
 
-    <!-- JOURNEY -->
     <section id="screen-journey" class="screen">
       <div class="section-title"><div class="h1">Journey</div></div>
       <div class="card">

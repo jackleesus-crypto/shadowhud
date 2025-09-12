@@ -3,15 +3,18 @@ const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelec
 function notify(title, body){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ try{ registration && registration.showNotification ? registration.showNotification(title,{body}) : new Notification(title,{body}); }catch(e){} } }
 const todayKey=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const endOfToday=()=>{ const d=new Date(); d.setHours(23,59,59,999); return d.getTime(); };
+function pad(n){return String(n).padStart(2,'0');}
+function nowHHMM(){ const d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
 
 // ===== state =====
 const defaultState={ 
   player:{level:1,xp:0,xpNext:50,gold:0},
   attrs:{Physical:0,Psyche:0,Intellect:0,Financial:0,Social:0,Spiritual:0},
   quests:[], shop:[], lastId:0, lastDailyKey:null,
+  notifSent:{},
   stats:{completed:0,goldEarned:0,xpEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
 };
-let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v8'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v8', JSON.stringify(state)); }
+let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v10'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v10', JSON.stringify(state)); }
 
 // ===== curves & rewards =====
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
@@ -38,15 +41,17 @@ function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $(
 $('#tab-character').onclick=()=>{ $('#appbar-title').textContent='Character'; show('character'); };
 $('#tab-quests').onclick=()=>{ $('#appbar-title').textContent='Quests'; show('quests'); };
 $('#tab-store').onclick=()=>{ $('#appbar-title').textContent='Store'; show('store'); renderShop(); };
-$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='Focus'; show('focus'); ensureFocusNotStuck(); updateFocusUI(); };
+$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='Focus'; show('focus'); updateFocusUI(); };
 $('#tab-journey').onclick=()=>{ $('#appbar-title').textContent='Journey'; show('journey'); renderJourney(); };
-$('#btn-plus').onclick=()=>{ resetForm(); show('create'); $('#appbar-title').textContent='New Quest'; };
+$('#btn-plus').onclick=()=>{ resetForm(); show('create'); $('#appbar-title').textContent='New/Edit Quest'; };
 $('#btn-cancel').onclick=()=>{ show('quests'); $('#appbar-title').textContent='Quests'; };
 
-// ===== Quests render & logic =====
+// ===== Quests render & logic (same as v9 features kept) =====
 function currentFilter(){ return document.querySelector('.chip.active')?.dataset.filter || 'all'; }
 $$('.chip').forEach(c=>c.onclick=()=>{ $$('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); renderQuests(c.dataset.filter); });
+
 function badgeHTML(q){ const b=[]; if(q.daily) b.push('<span class="badge">Daily</span>'); if(q.penalty) b.push('<span class="badge pen">Penalty</span>'); return b.join(''); }
+function countdownText(ts){ if(!ts) return ''; const ms=Math.max(0, ts-Date.now()); const s=Math.floor(ms/1000); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}`; }
 
 function renderQuests(filter='all'){
   const list=$('#quest-list'); list.innerHTML='';
@@ -64,10 +69,11 @@ function renderQuests(filter='all'){
   for(const q of filtered){
     const node=document.createElement('div'); node.className='card quest';
     const diff=DIFF[q.diff||'normal'];
+    const countdown = q.daily && q.deadline ? ` • resets in ${countdownText(q.deadline)}` : '';
     node.innerHTML = `
       <div class="badges">${badgeHTML(q)}</div>
       <div class="q-top">
-        <div class="q-title">${q.title} <span class="hint">(${diff.label} • ${q.attr})</span></div>
+        <div class="q-title">${q.title} <span class="hint">(${diff.label} • ${q.attr}${countdown})</span></div>
         <div class="q-xp">+${rewardXP(q)} XP · 💰${rewardGold(q)} · ⬡ +${rewardAttr(q)} ${q.attr}</div>
       </div>
       <div class="q-sub"></div>
@@ -75,6 +81,7 @@ function renderQuests(filter='all'){
       <div class="q-actions">
         <button class="btn small start hidden">Start</button>
         <button class="btn small complete">Done</button>
+        <button class="btn small ghost reset">Reset</button>
         <button class="btn small ghost pause hidden">Pause</button>
         <button class="btn small ghost resume hidden">Resume</button>
         <button class="btn small ghost inc hidden">+1</button>
@@ -84,7 +91,7 @@ function renderQuests(filter='all'){
         <button class="btn small ghost delete">Delete</button>
       </div>`;
     const sub=node.querySelector('.q-sub'); const fill=node.querySelector('.q-fill');
-    const btnS=node.querySelector('.start'); const btnC=node.querySelector('.complete'); const btnP=node.querySelector('.pause'); const btnR=node.querySelector('.resume'); const btnI=node.querySelector('.inc'); const btnD=node.querySelector('.dec'); const btnE=node.querySelector('.edit'); const btnDel=node.querySelector('.delete');
+    const btnS=node.querySelector('.start'); const btnC=node.querySelector('.complete'); const btnP=node.querySelector('.pause'); const btnR=node.querySelector('.resume'); const btnI=node.querySelector('.inc'); const btnD=node.querySelector('.dec'); const btnE=node.querySelector('.edit'); const btnDel=node.querySelector('.delete'); const btnReset=node.querySelector('.reset');
 
     if(q.type==='timer'){
       if(!q.started){ sub.textContent='Not started'; btnS.classList.remove('hidden'); }
@@ -120,6 +127,7 @@ function renderQuests(filter='all'){
 
     btnS.onclick=()=>{ const now=Date.now(); q.startTs=now; q.endTs=now+(q.durationMs||0); q.started=true; q.paused=false; save(); renderQuests(filter); };
     btnC.onclick=()=>finishQuest(q, filter);
+    btnReset.onclick=()=>{ resetQuestProgress(q); save(); renderQuests(filter); };
     if(btnP) btnP.onclick=()=>{ q.paused=true; q.pauseTs=Date.now(); save(); renderQuests(filter); };
     if(btnR) btnR.onclick=()=>{ if(q.paused){ const pausedFor=Date.now()-(q.pauseTs||Date.now()); q.endTs+=pausedFor; q.paused=false; save(); renderQuests(filter);} };
     if(btnI) btnI.onclick=()=>{ q.count=Math.min(q.target,(q.count||0)+1); if(q.count>=q.target && !q.completed){ finishQuest(q, filter); } else { save(); renderQuests(filter);} };
@@ -134,7 +142,13 @@ function rewardXP(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round((q.
 function rewardGold(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round(10*m); }
 function rewardAttr(q){ return ATTR_REWARD[q.diff||'normal']||1; }
 function applyAttributeReward(q){ const a=q.attr; if(!a) return; state.attrs[a]=(state.attrs[a]||0)+rewardAttr(q); }
-
+function resetQuestProgress(q){
+  q.completed=false;
+  if(q.type==='timer'){ q.started=false; q.paused=false; delete q.startTs; delete q.endTs; delete q.pauseTs; }
+  if(q.type==='counter'){ q.count=0; }
+  if(q.type==='checklist'){ q.done=(q.items||[]).map(()=>false); }
+  if(q.type==='multicounter'){ q.metrics=(q.metrics||[]).map(m=>({label:m.label,target:m.target,count:0})); }
+}
 function finishQuest(q, filter){
   if(q.completed) return;
   q.completed=true;
@@ -144,29 +158,26 @@ function finishQuest(q, filter){
   grantXP(rewardXP(q)); grantGold(rewardGold(q)); applyAttributeReward(q);
   notify('Quest Complete', `${q.title} finished!`);
   if(q.repeat && q.repeat!=='none'){
-    const next=structuredClone(q); next.id=++state.lastId; next.completed=false;
-    if(q.type==='timer'){ next.started=false; next.paused=false; delete next.startTs; delete next.endTs; delete next.pauseTs; }
-    if(q.type==='counter'){ next.count=0; }
-    if(q.type==='checklist'){ next.done=(q.items||[]).map(()=>false); }
-    if(q.type==='multicounter'){ next.metrics=next.metrics.map(m=>({label:m.label,target:m.target,count:0})); }
+    const next=structuredClone(q); next.id=++state.lastId; resetQuestProgress(next);
     if(q.deadline){ const d=new Date(q.deadline); if(q.repeat==='daily') d.setDate(d.getDate()+1); if(q.repeat==='weekly') d.setDate(d.getDate()+7); next.deadline=d.getTime(); }
     state.quests.push(next);
   }
   save(); renderQuests(filter); renderTiles(); drawRadar(); renderJourney();
 }
 setInterval(()=>{ let touched=false; for(const q of state.quests){ if(q.type==='timer' && q.started && !q.completed && !q.paused && timerRemaining(q)<=0){ finishQuest(q, currentFilter()); touched=true; } } if(touched){ save(); renderQuests(currentFilter()); } },1000);
+setInterval(()=>{ renderQuests(currentFilter()); },1000);
 function timerRemaining(q){ if(q.paused) return Math.max(0,q.endTs-(q.pauseTs||Date.now())); return Math.max(0,(q.endTs||0)-Date.now()); }
 function formatTime(ms){ const s=Math.max(0,Math.ceil(ms/1000)); const m=Math.floor(s/60); const ss=(''+(s%60)).padStart(2,'0'); const mm=(''+(m%60)).padStart(2,'0'); const hh=Math.floor(m/60); return hh>0?`${hh}:${mm}:${ss}`:`${m}:${ss}`; }
 
 // ===== Quest form =====
-function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-multi').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; updateTypeFields(); }
-function populateForm(q){ const f=$('#quest-form'); f.dataset.editing=String(q.id); $('#q-title').value=q.title; $('#q-desc').value=q.desc||''; $('#q-attr').value=q.attr||'Physical'; $('#q-type').value=q.type; $('#q-diff').value=q.diff||'normal'; $('#q-duration').value=Math.round((q.durationMs||0)/60000)||30; $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', '); $('#q-multi').value=(q.metrics||[]).map(m=>`${m.label}:${m.target}`).join(', '); $('#q-deadline').value=q.deadline? new Date(q.deadline).toISOString().slice(0,16):''; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-remind').value=q.remindMin||10; updateTypeFields(); }
+function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-multi').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; $('#q-remindtimes').value=''; updateTypeFields(); }
+function populateForm(q){ const f=$('#quest-form'); f.dataset.editing=String(q.id); $('#q-title').value=q.title; $('#q-desc').value=q.desc||''; $('#q-attr').value=q.attr||'Physical'; $('#q-type').value=q.type; $('#q-diff').value=q.diff||'normal'; $('#q-duration').value=Math.round((q.durationMs||0)/60000)||30; $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', '); $('#q-multi').value=(q.metrics||[]).map(m=>`${m.label}:${m.target}`).join(', '); $('#q-deadline').value=q.deadline? new Date(q.deadline).toISOString().slice(0,16):''; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-remind').value=q.remindMin||10; $('#q-remindtimes').value=(q.reminderTimes||[]).join(', '); updateTypeFields(); }
 $('#q-type').onchange=updateTypeFields; function updateTypeFields(){ const t=$('#q-type').value; $$('.if').forEach(el=>el.classList.remove('show')); $$('.if.'+t).forEach(el=>el.classList.add('show')); }
 document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
   ev.preventDefault();
   const editingId=$('#quest-form').dataset.editing;
   const t=$('#q-type').value;
-  const quest={ id:editingId?Number(editingId):++state.lastId, title:$('#q-title').value.trim(), desc:$('#q-desc').value.trim(), attr:$('#q-attr').value, type:t, diff:$('#q-diff').value, repeat:$('#q-repeat').value, xp:Number($('#q-xp').value)||0, completed:false, remindMin:Number($('#q-remind').value)||0, daily:false, penalty:false, dayKey:null };
+  const quest={ id:editingId?Number(editingId):++state.lastId, title:$('#q-title').value.trim(), desc:$('#q-desc').value.trim(), attr:$('#q-attr').value, type:t, diff:$('#q-diff').value, repeat:'none', xp:Number($('#q-xp').value)||0, completed:false, remindMin:Number($('#q-remind').value)||0, daily:false, penalty:false, dayKey:null, reminderTimes: $('#q-remindtimes').value.split(',').map(s=>s.trim()).filter(Boolean) };
   const deadlineStr=$('#q-deadline').value; quest.deadline = deadlineStr? new Date(deadlineStr).getTime(): null;
   if(t==='timer'){ const mins=Math.max(1, Number($('#q-duration').value)||30); quest.durationMs=mins*60000; quest.started=false; quest.paused=false; }
   if(t==='counter'){ quest.target=Math.max(1, Number($('#q-target').value)||10); quest.count = editingId ? (state.quests.find(x=>x.id===quest.id)?.count||0):0; }
@@ -176,7 +187,7 @@ document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
   save(); renderQuests(currentFilter()); show('quests'); $('#appbar-title').textContent='Quests';
 });
 
-// ===== Daily generator & penalties + streak counting =====
+// ===== Daily generator & penalties + streak counting (same as v9) =====
 const DAILY_TEMPLATES=[
   {title:'Meditate for 10 minutes', attr:'Spiritual', type:'timer', mins:10, diff:'easy', xp:12},
   {title:'Read 15 pages of a book', attr:'Intellect', type:'counter', target:15, diff:'normal', xp:20},
@@ -189,13 +200,12 @@ const DAILY_TEMPLATES=[
   {title:'Cook a healthy meal', attr:'Physical', type:'checklist', items:['Prep','Cook','Clean'], diff:'normal', xp:25}
 ];
 
-// Strength Training as a SINGLE multicounter quest
 const STRENGTH_MULTI={
   title:'Strength Training',
   attr:'Physical',
   type:'multicounter',
   diff:'elite',
-  xp:120,
+  xp:60,
   metrics:[
     {label:'Pushups', target:100, count:0},
     {label:'Sit-ups', target:100, count:0},
@@ -211,9 +221,7 @@ const PENALTY_TEMPLATES=[
   {title:'Penalty — 100 squats', attr:'Physical', type:'counter', target:100, diff:'elite', xp:30},
   {title:'Penalty — 20 minute brisk walk', attr:'Physical', type:'timer', mins:20, diff:'normal', xp:18}
 ];
-
 function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
-
 function ensureStrengthTraining(dayKey){
   const exists = state.quests.some(q=>q.daily && q.dayKey===dayKey && q.title==='Strength Training');
   if(exists) return;
@@ -221,7 +229,6 @@ function ensureStrengthTraining(dayKey){
   base.id=++state.lastId; base.completed=false; base.remindMin=10; base.daily=true; base.penalty=false; base.dayKey=dayKey; base.deadline=endOfToday();
   state.quests.push(base);
 }
-
 function generateDailySet(dayKey){
   ensureStrengthTraining(dayKey);
   const already = new Set(state.quests.filter(q=>q.daily && q.dayKey===dayKey).map(q=>q.title));
@@ -235,7 +242,6 @@ function generateDailySet(dayKey){
     state.quests.push(q);
   }
 }
-
 function generatePenaltiesFor(dayKeyMissed){
   const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed);
   if(!missed.length) return;
@@ -249,7 +255,6 @@ function generatePenaltiesFor(dayKeyMissed){
     state.quests.push(q);
   }
 }
-
 function onNewDay(prevKey, currentKey){
   if(prevKey){
     const didCompleteYesterday = state.stats.lastCompletionDay === prevKey;
@@ -257,6 +262,7 @@ function onNewDay(prevKey, currentKey){
     state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak);
     generatePenaltiesFor(prevKey);
   }
+  state.notifSent[currentKey] = {}; // new day, reset sent flags
   generateDailySet(currentKey);
   state.lastDailyKey = currentKey;
   save();
@@ -267,16 +273,38 @@ function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const item
 $('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
 document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
 
-// ===== Focus (locks app) + stats minutes =====
+// ===== Focus: simple timer (no lock) =====
 let focus={running:false,endTs:0,paused:false,pauseTs:0,timer:null,startedAt:0};
-function ensureFocusNotStuck(){ const remaining = focus.endTs-Date.now(); if(!focus.running || remaining<=0){ focus.running=false; focus.paused=false; $('#lock-overlay').classList.add('hidden'); } }
-function updateFocusUI(){ const runningNow = focus.running && (focus.endTs>Date.now()); const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',runningNow); $('#focus-pause').classList.toggle('hidden',!(runningNow&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(runningNow&&focus.paused)); $('#lock-overlay').classList.toggle('hidden',!runningNow); }
+function updateFocusUI(){ const runningNow = focus.running && (focus.endTs>Date.now()); const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',runningNow); $('#focus-pause').classList.toggle('hidden',!(runningNow&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(runningNow&&focus.paused)); }
 $('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value)||25); focus.running=true; focus.paused=false; focus.startedAt=Date.now(); focus.endTs=focus.startedAt+mins*60000; if(focus.timer) clearInterval(focus.timer); focus.timer=setInterval(()=>{ const left=focus.endTs-Date.now(); updateFocusUI(); if(left<=0){ clearInterval(focus.timer); focus.running=false; const minutes=Math.round((Date.now()-focus.startedAt)/60000); state.stats.focusMinutes += minutes; notify('Focus complete','Great work!'); save(); updateFocusUI(); } },500); updateFocusUI(); };
 $('#focus-pause').onclick=()=>{ focus.paused=true; focus.pauseTs=Date.now(); updateFocusUI(); };
 $('#focus-resume').onclick=()=>{ if(focus.paused){ const pausedFor=Date.now()-focus.pauseTs; focus.endTs+=pausedFor; focus.paused=false; updateFocusUI(); } };
-$('#focus-cancel').onclick=()=>{ focus.running=false; if(focus.timer) clearInterval(focus.timer); $('#lock-overlay').classList.add('hidden'); updateFocusUI(); };
+$('#focus-cancel').onclick=()=>{ focus.running=false; if(focus.timer) clearInterval(focus.timer); updateFocusUI(); };
 
-// ===== Journey (progress & achievements) =====
+// ===== Local Notification Scheduler =====
+function checkReminders(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const day=todayKey();
+  if(!state.notifSent[day]) state.notifSent[day]={};
+  const hhmm = nowHHMM();
+  for(const q of state.quests){
+    if(q.completed) continue;
+    const times=(q.reminderTimes||[]);
+    if(!times.length) continue;
+    const sentForQuest = state.notifSent[day][q.id] || {};
+    for(const t of times){
+      if(t===hhmm && !sentForQuest[t]){
+        notify('Reminder: '+q.title, q.attr+' quest');
+        sentForQuest[t]=true;
+      }
+    }
+    state.notifSent[day][q.id]=sentForQuest;
+  }
+  save();
+}
+setInterval(checkReminders, 30000);
+
+// ===== Journey =====
 const ACH = [
   {id:'lv10',  name:'Apprentice', desc:'Reach Level 10',  check: s=>s.player.level>=10},
   {id:'lv50',  name:'Veteran',    desc:'Reach Level 50',  check: s=>s.player.level>=50},
@@ -315,6 +343,6 @@ function init(){
   if(state.lastDailyKey !== today){ onNewDay(state.lastDailyKey, today); }
   renderWallet(); renderLevel(); renderTiles(); drawRadar(); renderQuests('all'); renderShop(); renderJourney();
   if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 600); }
-  ensureFocusNotStuck(); updateFocusUI();
+  updateFocusUI(); checkReminders();
 }
 window.addEventListener('DOMContentLoaded', init);
