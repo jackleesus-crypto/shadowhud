@@ -11,7 +11,7 @@ const defaultState={
   quests:[], shop:[], lastId:0, lastDailyKey:null,
   stats:{completed:0,goldEarned:0,xpEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
 };
-let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v7'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v7', JSON.stringify(state)); }
+let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v8'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v8', JSON.stringify(state)); }
 
 // ===== curves & rewards =====
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
@@ -38,7 +38,7 @@ function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $(
 $('#tab-character').onclick=()=>{ $('#appbar-title').textContent='Character'; show('character'); };
 $('#tab-quests').onclick=()=>{ $('#appbar-title').textContent='Quests'; show('quests'); };
 $('#tab-store').onclick=()=>{ $('#appbar-title').textContent='Store'; show('store'); renderShop(); };
-$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='Focus'; show('focus'); updateFocusUI(); };
+$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='Focus'; show('focus'); ensureFocusNotStuck(); updateFocusUI(); };
 $('#tab-journey').onclick=()=>{ $('#appbar-title').textContent='Journey'; show('journey'); renderJourney(); };
 $('#btn-plus').onclick=()=>{ resetForm(); show('create'); $('#appbar-title').textContent='New Quest'; };
 $('#btn-cancel').onclick=()=>{ show('quests'); $('#appbar-title').textContent='Quests'; };
@@ -105,6 +105,7 @@ function renderQuests(filter='all'){
         <div class="multi-row" data-idx="${idx}">
           <div class="lbl">${m.label}</div>
           <div class="val">${m.count||0} / ${m.target}</div>
+          <button class="btn small ghost mfinish">Finish</button>
           <button class="btn small ghost mdec">−1</button>
           <button class="btn small ghost minc">+1</button>
         </div>`).join('');
@@ -113,6 +114,7 @@ function renderQuests(filter='all'){
         const i=Number(row.dataset.idx);
         row.querySelector('.minc').onclick=()=>{ q.metrics[i].count=Math.min(q.metrics[i].target,(q.metrics[i].count||0)+1); save(); renderQuests(filter); if(q.metrics.every(m=>(m.count||0)>=m.target)&&!q.completed){ finishQuest(q, filter);} };
         row.querySelector('.mdec').onclick=()=>{ q.metrics[i].count=Math.max(0,(q.metrics[i].count||0)-1); save(); renderQuests(filter); };
+        row.querySelector('.mfinish').onclick=()=>{ q.metrics[i].count=q.metrics[i].target; save(); renderQuests(filter); if(q.metrics.every(m=>(m.count||0)>=m.target)&&!q.completed){ finishQuest(q, filter);} };
       });
     }
 
@@ -267,6 +269,7 @@ document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.prev
 
 // ===== Focus (locks app) + stats minutes =====
 let focus={running:false,endTs:0,paused:false,pauseTs:0,timer:null,startedAt:0};
+function ensureFocusNotStuck(){ const remaining = focus.endTs-Date.now(); if(!focus.running || remaining<=0){ focus.running=false; focus.paused=false; $('#lock-overlay').classList.add('hidden'); } }
 function updateFocusUI(){ const runningNow = focus.running && (focus.endTs>Date.now()); const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',runningNow); $('#focus-pause').classList.toggle('hidden',!(runningNow&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(runningNow&&focus.paused)); $('#lock-overlay').classList.toggle('hidden',!runningNow); }
 $('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value)||25); focus.running=true; focus.paused=false; focus.startedAt=Date.now(); focus.endTs=focus.startedAt+mins*60000; if(focus.timer) clearInterval(focus.timer); focus.timer=setInterval(()=>{ const left=focus.endTs-Date.now(); updateFocusUI(); if(left<=0){ clearInterval(focus.timer); focus.running=false; const minutes=Math.round((Date.now()-focus.startedAt)/60000); state.stats.focusMinutes += minutes; notify('Focus complete','Great work!'); save(); updateFocusUI(); } },500); updateFocusUI(); };
 $('#focus-pause').onclick=()=>{ focus.paused=true; focus.pauseTs=Date.now(); updateFocusUI(); };
@@ -312,6 +315,6 @@ function init(){
   if(state.lastDailyKey !== today){ onNewDay(state.lastDailyKey, today); }
   renderWallet(); renderLevel(); renderTiles(); drawRadar(); renderQuests('all'); renderShop(); renderJourney();
   if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 600); }
-  updateFocusUI();
+  ensureFocusNotStuck(); updateFocusUI();
 }
 window.addEventListener('DOMContentLoaded', init);
