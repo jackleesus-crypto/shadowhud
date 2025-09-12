@@ -8,7 +8,6 @@
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;position:relative}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.tile{display:grid;place-items:center;gap:4px;height:96px;border-radius:12px;background:#111;border:1px solid var(--line);position:relative}
 .tile .n{font-size:22px;font-weight:800}.tile .l{font-size:11px;color:var(--muted);letter-spacing:.08em}
-.tile .plus{position:absolute;right:8px;bottom:8px;background:#0f1a2b;border:1px solid #204e85;color:#cfe7ff;border-radius:8px;font-size:12px;padding:4px 6px}
 .radar-card{display:flex;align-items:center;justify-content:center}.empty{opacity:.6;text-align:center;margin-top:12px}
 .filters-row{display:flex;gap:8px;margin:8px 0}.chip{background:#101010;border:1px solid var(--line);color:var(--muted);padding:6px 10px;border-radius:999px}
 .chip.active{border-color:var(--primary);color:#fff}.list{display:grid;gap:12px}

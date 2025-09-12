@@ -1,29 +1,28 @@
 // ===== helpers =====
 const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
-function notify(title, body){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ (registration && registration.showNotification) ? registration.showNotification(title,{body}) : new Notification(title,{body}); } else if(Notification.permission!=='denied'){ Notification.requestPermission().then(p=>{ if(p==='granted') notify(title, body); }); } }
-const todayKey=()=>{ const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const da=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${da}`; };
+function notify(title, body){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ try{ registration && registration.showNotification ? registration.showNotification(title,{body}) : new Notification(title,{body}); }catch(e){} } }
+const todayKey=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const endOfToday=()=>{ const d=new Date(); d.setHours(23,59,59,999); return d.getTime(); };
 
 // ===== state =====
 const defaultState={ 
-  player:{level:1,xp:0,xpNext:50,gold:0,ap:0},
+  player:{level:1,xp:0,xpNext:50,gold:0},
   attrs:{Physical:0,Psyche:0,Intellect:0,Financial:0,Social:0,Spiritual:0},
   quests:[], shop:[], lastId:0, lastDailyKey:null,
-  stats:{completed:0,goldEarned:0,xpEarned:0,apEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
+  stats:{completed:0,goldEarned:0,xpEarned:0,penaltiesCleared:0,currentStreak:0,longestStreak:0,focusMinutes:0,lastCompletionDay:null}
 };
-let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v4'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v4', JSON.stringify(state)); }
+let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v5'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v5', JSON.stringify(state)); }
 
 // ===== curves & rewards =====
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
 const ATTR_REWARD={easy:1, normal:1, hard:2, elite:3, boss:5};
 function xpToNext(level){ return Math.round(40+6*level+0.6*level*level); }
 function rankForLevel(l){ if(l<15)return'E'; if(l<30)return'D'; if(l<45)return'C'; if(l<60)return'B'; if(l<75)return'A'; return'S'; }
-function grantXP(a){ const p=state.player; if(p.level>=100) return; p.xp+=Math.max(0,a|0); state.stats.xpEarned+=Math.max(0,a|0); while(p.level<100&&p.xp>=p.xpNext){ p.xp-=p.xpNext; p.level++; p.xpNext=xpToNext(p.level);} if(p.level>=100){p.level=100;p.xp=p.xpNext;} save(); renderLevel(); renderJourney(); }
+function grantXP(a){ const p=state.player; if(p.level>=100) return; const add=Math.max(0,a|0); p.xp+=add; state.stats.xpEarned+=add; while(p.level<100&&p.xp>=p.xpNext){ p.xp-=p.xpNext; p.level++; p.xpNext=xpToNext(p.level);} if(p.level>=100){p.level=100;p.xp=p.xpNext;} save(); renderLevel(); renderJourney(); }
 function grantGold(a){ const g=Math.max(0,Math.round(a)); state.player.gold=(state.player.gold||0)+g; state.stats.goldEarned+=(g||0); save(); renderWallet(); renderJourney(); }
-function grantAP(a){ const n=Math.max(0,Math.round(a)); state.player.ap=(state.player.ap||0)+n; state.stats.apEarned+=n; save(); renderWallet(); }
 
 // ===== UI: Level/Wallet/Attrs =====
-function renderWallet(){ $('#gold').textContent=state.player.gold||0; $('#gold2').textContent=state.player.gold||0; $('#ap').textContent=state.player.ap||0; }
+function renderWallet(){ $('#gold').textContent=state.player.gold||0; $('#gold2').textContent=state.player.gold||0; }
 function renderLevel(){ const p=state.player; $('#level-num').textContent=p.level; const rk=rankForLevel(p.level); $('#rank-text').textContent=rk; $('#rank-badge').textContent=rk; $('#xp-cur').textContent=p.xp; $('#xp-next').textContent=p.xpNext; $('#xp-fill').style.width=Math.max(0,Math.min(100,(p.xp/p.xpNext)*100))+'%'; }
 
 function drawRadar(){ const c=$('#radar'); const ctx=c.getContext('2d'); const W=c.width, H=c.height; ctx.clearRect(0,0,W,H); const centerX=W/2, centerY=H/2+10, R=80; const labs=["Financial","Physical","Psyche","Intellect","Social","Spiritual"]; 
@@ -31,7 +30,8 @@ function drawRadar(){ const c=$('#radar'); const ctx=c.getContext('2d'); const W
   for(let i=0;i<labs.length;i++){ const a=(Math.PI*2/labs.length)*i - Math.PI/2; ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(centerX+Math.cos(a)*R, centerY+Math.sin(a)*R); ctx.stroke(); ctx.fillStyle='#a0a0a0'; ctx.font='12px system-ui'; ctx.textAlign='center'; ctx.fillText(labs[i], centerX+Math.cos(a)*(R+16), centerY+Math.sin(a)*(R+16)); }
   ctx.beginPath(); for(let i=0;i<labs.length;i++){ const val=Math.max(0,Math.min(100,(state.attrs[labs[i]]||0))); const a=(Math.PI*2/labs.length)*i - Math.PI/2; const x=centerX+Math.cos(a)*(R*val/100); const y=centerY+Math.sin(a)*(R*val/100); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); ctx.fillStyle='rgba(77,163,255,0.15)'; ctx.fill(); ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2; ctx.stroke();
 }
-function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div><button class="plus">＋</button>`; tile.querySelector('.plus').onclick=()=>{ if((state.player.ap||0)<=0) return alert('No attribute points to spend.'); state.attrs[lab]=(state.attrs[lab]||0)+1; state.player.ap--; save(); renderTiles(); drawRadar(); }; grid.appendChild(tile);} }
+
+function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div>`; grid.appendChild(tile); } drawRadar(); }
 
 // ===== Navigation =====
 function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $('#screen-'+name).classList.add('visible'); $$('.tab').forEach(t=>t.classList.remove('active')); if(name==='character') $('#tab-character').classList.add('active'); if(name==='quests') $('#tab-quests').classList.add('active'); if(name==='store') $('#tab-store').classList.add('active'); if(name==='focus') $('#tab-focus').classList.add('active'); if(name==='journey') $('#tab-journey').classList.add('active'); }
@@ -68,7 +68,7 @@ function renderQuests(filter='all'){
       <div class="badges">${badgeHTML(q)}</div>
       <div class="q-top">
         <div class="q-title">${q.title} <span class="hint">(${diff.label} • ${q.attr})</span></div>
-        <div class="q-xp">+${rewardXP(q)} XP · ⭐${rewardAP(q)} · 💰${rewardGold(q)} · ⬡ +${rewardAttr(q)} ${q.attr}</div>
+        <div class="q-xp">+${rewardXP(q)} XP · 💰${rewardGold(q)} · ⬡ +${rewardAttr(q)} ${q.attr}</div>
       </div>
       <div class="q-sub"></div>
       <div class="q-progress"><div class="q-fill" style="width:0%"></div></div>
@@ -111,7 +111,6 @@ function renderQuests(filter='all'){
   }
 }
 function rewardXP(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round((q.xp||0)*m); }
-function rewardAP(q){ const m=DIFF[q.diff||'normal'].mult; return Math.max(1, Math.round(1*m)); }
 function rewardGold(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round(10*m); }
 function rewardAttr(q){ return ATTR_REWARD[q.diff||'normal']||1; }
 function applyAttributeReward(q){ const a=q.attr; if(!a) return; state.attrs[a]=(state.attrs[a]||0)+rewardAttr(q); }
@@ -122,7 +121,7 @@ function finishQuest(q, filter){
   state.stats.completed++;
   if(q.penalty) state.stats.penaltiesCleared++;
   state.stats.lastCompletionDay = todayKey();
-  grantXP(rewardXP(q)); grantAP(rewardAP(q)); grantGold(rewardGold(q)); applyAttributeReward(q);
+  grantXP(rewardXP(q)); grantGold(rewardGold(q)); applyAttributeReward(q);
   notify('Quest Complete', `${q.title} finished!`);
   if(q.repeat && q.repeat!=='none'){
     const next=structuredClone(q); next.id=++state.lastId; next.completed=false;
@@ -136,7 +135,7 @@ function finishQuest(q, filter){
 }
 setInterval(()=>{ let touched=false; for(const q of state.quests){ if(q.type==='timer' && q.started && !q.completed && !q.paused && timerRemaining(q)<=0){ finishQuest(q, currentFilter()); touched=true; } } if(touched){ save(); renderQuests(currentFilter()); } },1000);
 function timerRemaining(q){ if(q.paused) return Math.max(0,q.endTs-(q.pauseTs||Date.now())); return Math.max(0,(q.endTs||0)-Date.now()); }
-function formatTime(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60); const ss=(''+(s%60)).padStart(2,'0'); const mm=(''+(m%60)).padStart(2,'0'); const hh=Math.floor(m/60); return hh>0?`${hh}:${mm}:${ss}`:`${m}:${ss}`; }
+function formatTime(ms){ const s=Math.max(0,Math.ceil(ms/1000)); const m=Math.floor(s/60); const ss=(''+(s%60)).padStart(2,'0'); const mm=(''+(m%60)).padStart(2,'0'); const hh=Math.floor(m/60); return hh>0?`${hh}:${mm}:${ss}`:`${m}:${ss}`; }
 
 // ===== Quest form =====
 function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; updateTypeFields(); }
@@ -175,19 +174,20 @@ const PENALTY_TEMPLATES=[
   {title:'Penalty — 20 minute brisk walk', attr:'Physical', type:'timer', mins:20, diff:'normal', xp:18}
 ];
 function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
-function generateDailySet(dayKey){ const howMany = 3 + Math.floor(Math.random()*2); const picks = pickRandom(DAILY_TEMPLATES, howMany); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=(t.items||[]); q.done=q.items.map(()=>false);} state.quests.push(q);} }
-function generatePenaltiesFor(dayKeyMissed){ const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed); if(!missed.length) return; const count = Math.min(3, missed.length); const picks = pickRandom(PENALTY_TEMPLATES, count); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=(t.items||[]); q.done=q.items.map(()=>false);} state.quests.push(q);} }
+function generateDailySet(dayKey){ const howMany = 3; const picks = pickRandom(DAILY_TEMPLATES, howMany); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items).map(()=>false); } state.quests.push(q); } }
+function generatePenaltiesFor(dayKeyMissed){ const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed); if(!missed.length) return; const count = Math.min(3, missed.length); const picks = pickRandom(PENALTY_TEMPLATES, count); for(const t of picks){ const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() }; if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; } if(t.type==='counter'){ q.target=t.target||1; q.count=0; } if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items).map(()=>false); } state.quests.push(q); } }
+
 function onNewDay(prevKey, currentKey){ if(prevKey){ const didCompleteYesterday = state.stats.lastCompletionDay === prevKey; state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0; state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak); generatePenaltiesFor(prevKey);} generateDailySet(currentKey); state.lastDailyKey = currentKey; save(); }
 
 // ===== Shop =====
-function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ const cost=it.cost||0; if((state.player.gold||0)<cost) return alert('Not enough gold'); state.player.gold-=cost; save(); renderWallet(); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x!==it); save(); renderShop(); }; list.appendChild(node);} }
+function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small ghost del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold>=it.cost){ state.player.gold-=it.cost; save(); renderWallet(); } else alert('Not enough gold!'); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
 $('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
 document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
 
 // ===== Focus (locks app) + stats minutes =====
 let focus={running:false,endTs:0,paused:false,pauseTs:0,timer:null,startedAt:0};
-function updateFocusUI(){ const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',focus.running); $('#focus-pause').classList.toggle('hidden',!(focus.running&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(focus.running&&focus.paused)); $('#lock-overlay').classList.toggle('hidden',!focus.running); }
-$('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value)||25); focus.running=true; focus.paused=false; focus.endTs=Date.now()+mins*60000; focus.startedAt=Date.now(); if(focus.timer) clearInterval(focus.timer); focus.timer=setInterval(()=>{ const left=focus.endTs-Date.now(); updateFocusUI(); if(left<=0){ clearInterval(focus.timer); focus.running=false; const minutes=Math.round((Date.now()-focus.startedAt)/60000); state.stats.focusMinutes += minutes; notify('Focus complete','Great work!'); save(); renderJourney(); updateFocusUI(); } }, 250); updateFocusUI(); };
+function updateFocusUI(){ const runningNow = focus.running && (focus.endTs>Date.now()); const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',runningNow); $('#focus-pause').classList.toggle('hidden',!(runningNow&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(runningNow&&focus.paused)); $('#lock-overlay').classList.toggle('hidden',!runningNow); }
+$('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value)||25); focus.running=true; focus.paused=false; focus.startedAt=Date.now(); focus.endTs=focus.startedAt+mins*60000; if(focus.timer) clearInterval(focus.timer); focus.timer=setInterval(()=>{ const left=focus.endTs-Date.now(); updateFocusUI(); if(left<=0){ clearInterval(focus.timer); focus.running=false; const minutes=Math.round((Date.now()-focus.startedAt)/60000); state.stats.focusMinutes += minutes; notify('Focus complete','Great work!'); save(); updateFocusUI(); } },500); updateFocusUI(); };
 $('#focus-pause').onclick=()=>{ focus.paused=true; focus.pauseTs=Date.now(); updateFocusUI(); };
 $('#focus-resume').onclick=()=>{ if(focus.paused){ const pausedFor=Date.now()-focus.pauseTs; focus.endTs+=pausedFor; focus.paused=false; updateFocusUI(); } };
 $('#focus-cancel').onclick=()=>{ focus.running=false; if(focus.timer) clearInterval(focus.timer); $('#lock-overlay').classList.add('hidden'); updateFocusUI(); };
@@ -225,12 +225,12 @@ function renderJourney(){
 
 // ===== init & daily handling =====
 function init(){
-  if(!state.player){ state.player={level:1,xp:0,xpNext:xpToNext(1),gold:0,ap:0}; }
+  if(!state.player){ state.player={level:1,xp:0,xpNext:xpToNext(1),gold:0}; }
   state.player.xpNext = xpToNext(state.player.level);
   const today = todayKey();
   if(state.lastDailyKey !== today){ onNewDay(state.lastDailyKey, today); }
   renderWallet(); renderLevel(); renderTiles(); drawRadar(); renderQuests('all'); renderShop(); renderJourney();
-  if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 800); }
-  updateFocusUI(); // ensure focus overlay hidden initially
+  if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 600); }
+  updateFocusUI();
 }
 window.addEventListener('DOMContentLoaded', init);
