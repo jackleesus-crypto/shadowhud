@@ -1,24 +1,29 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset='utf-8'>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>ShadowHUD v11.2</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <h1>ShadowHUD v11.2</h1>
-  <div class="tabs">
-    <button type="button" onclick="showTab('quest')">Quest</button>
-    <button type="button" onclick="showTab('journey')">Journey</button>
-    <button type="button" onclick="showTab('character')">Character</button>
-    <button type="button" onclick="showTab('store')">Store</button>
-    <button type="button" onclick="showTab('focus')">Focus</button>
-  </div>
-  <div id="quest" class="screen visible">Quest screen</div>
-  <div id="journey" class="screen">Journey screen</div>
-  <div id="character" class="screen">Character screen</div>
-  <div id="store" class="screen">Store screen</div>
-  <div id="focus" class="screen">Focus screen</div>
+  <header><h1>ShadowHUD <span class="ver">v11.2</span></h1></header>
+  <main>
+    <section id="screen-character" class="screen visible">Character</section>
+    <section id="screen-quests" class="screen">Quests</section>
+    <section id="screen-store" class="screen">Store</section>
+    <section id="screen-focus" class="screen">Focus</section>
+    <section id="screen-journey" class="screen">Journey</section>
+  </main>
+  <nav class="tabs">
+    <button type="button" onclick="show('character')">Character</button>
+    <button type="button" onclick="show('quests')">Quests</button>
+    <button type="button" onclick="show('store')">Store</button>
+    <button type="button" onclick="show('focus')">Focus</button>
+    <button type="button" onclick="show('journey')">Journey</button>
+  </nav>
+  <script src="app.js"></script>
 </body>
 </html>
