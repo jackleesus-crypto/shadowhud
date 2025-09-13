@@ -1,4 +1,5 @@
 
+// ShadowHUD v11.4 — custom attribute amounts + iOS-style checklist
 const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
 function notify(title, body){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ try{ registration && registration.showNotification ? registration.showNotification(title,{body}) : new Notification(title,{body}); }catch(e){} } }
 const todayKey=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -16,7 +17,6 @@ const defaultState={
 let state=load(); function load(){ try{ return JSON.parse(localStorage.getItem('shadowhud-full-v11'))||structuredClone(defaultState);}catch(e){ return structuredClone(defaultState);} } function save(){ localStorage.setItem('shadowhud-full-v11', JSON.stringify(state)); }
 
 const DIFF={easy:{label:'Easy',mult:1.0},normal:{label:'Normal',mult:1.5},hard:{label:'Hard',mult:2.2},elite:{label:'Elite',mult:3.2},boss:{label:'Boss',mult:5.0}};
-const ATTR_REWARD={easy:1, normal:1, hard:2, elite:3, boss:5};
 function xpToNext(level){ return Math.round(40+6*level+0.6*level*level); }
 function rankForLevel(l){ if(l<15)return'E'; if(l<30)return'D'; if(l<45)return'C'; if(l<60)return'B'; if(l<75)return'A'; return'S'; }
 function grantXP(a){ const p=state.player; if(p.level>=100) return; const add=Math.max(0,a|0); p.xp+=add; state.stats.xpEarned+=add; while(p.level<100&&p.xp>=p.xpNext){ p.xp-=p.xpNext; p.level++; p.xpNext=xpToNext(p.level);} if(p.level>=100){p.level=100;p.xp=p.xpNext;} save(); renderLevel(); renderJourney(); }
@@ -33,19 +33,21 @@ function drawRadar(){ const c=$('#radar'); const ctx=c.getContext('2d'); const W
 function renderTiles(){ const grid=$('#attr-grid'); grid.innerHTML=''; const order=["Physical","Psyche","Intellect","Social","Spiritual","Financial"]; for(const lab of order){ const tile=document.createElement('div'); tile.className='tile'; tile.innerHTML=`<div class="n">${state.attrs[lab]||0}</div><div class="l">${lab.toUpperCase()}</div>`; grid.appendChild(tile); } drawRadar(); }
 
 function show(name){ $$('.screen').forEach(s=>s.classList.remove('visible')); $('#screen-'+name).classList.add('visible'); $$('.tab').forEach(t=>t.classList.remove('active')); if(name==='character') $('#tab-character').classList.add('active'); if(name==='quests') $('#tab-quests').classList.add('active'); if(name==='store') $('#tab-store').classList.add('active'); if(name==='focus') $('#tab-focus').classList.add('active'); if(name==='journey') $('#tab-journey').classList.add('active'); }
-$('#tab-character').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.2 — Character'; show('character'); };
-$('#tab-quests').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.2 — Quests'; show('quests'); };
-$('#tab-store').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.2 — Store'; show('store'); renderShop(); };
-$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.2 — Focus'; show('focus'); updateFocusUI(); };
-$('#tab-journey').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.2 — Journey'; show('journey'); renderJourney(); };
+$('#tab-character').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.4 — Character'; show('character'); };
+$('#tab-quests').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.4 — Quests'; show('quests'); };
+$('#tab-store').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.4 — Store'; show('store'); renderShop(); };
+$('#tab-focus').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.4 — Focus'; show('focus'); updateFocusUI(); };
+$('#tab-journey').onclick=()=>{ $('#appbar-title').textContent='ShadowHUD v11.4 — Journey'; show('journey'); renderJourney(); };
 $('#btn-plus').onclick=()=>{ resetForm(); show('create'); $('#appbar-title').textContent='New/Edit Quest'; };
-$('#btn-cancel').onclick=()=>{ show('quests'); $('#appbar-title').textContent='ShadowHUD v11.2 — Quests'; };
+$('#btn-cancel').onclick=()=>{ show('quests'); $('#appbar-title').textContent='ShadowHUD v11.4 — Quests'; };
 
 function currentFilter(){ return document.querySelector('.chip.active')?.dataset.filter || 'all'; }
 $$('.chip').forEach(c=>c.onclick=()=>{ $$('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); renderQuests(c.dataset.filter); });
 
-function tagRowHTML(q){ const chips=[]; if(q.daily) chips.push('<span class="badge">Daily</span>'); if(q.penalty) chips.push('<span class="badge pen">Penalty</span>'); return chips.length? `<div class="tag-row">${chips.join('')}</div>` : ''; }
+function tagRowHTML(q){ const chips=[]; if(q.daily) chips.push('<span class="badge">Daily</span>'); if(q.penalty) chips.push('<span class="badge pen">Penalty</span>'); return chips.length? `<div class="tag-row">${chips.join(' ')}</div>` : ''; }
 function countdownText(ts){ if(!ts) return ''; const ms=Math.max(0, ts-Date.now()); const s=Math.floor(ms/1000); const hh=String(Math.floor(s/3600)).padStart(2,'0'); const mm=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${hh}:${mm}:${ss}`; }
+function normalizeAttrs(arr){ if(!arr) return []; return arr.map(x=> typeof x==='string' ? {name:x, amt:1} : {name:x.name, amt:Math.max(1,Number(x.amt)||1)} ); }
+function attrLabel(q){ const a = normalizeAttrs(q.attrs); if(!a.length) return 'Attribute'; return a.map(x=>`${x.name} +${x.amt}`).join(', '); }
 
 function renderQuests(filter='all'){
   const list=$('#quest-list'); list.innerHTML='';
@@ -67,8 +69,8 @@ function renderQuests(filter='all'){
     node.innerHTML = `
       ${tagRowHTML(q)}
       <div class="q-top">
-        <div class="q-title">${q.title} <span class="hint">(${diff.label} • ${q.attr}${countdown})</span></div>
-        <div class="q-xp">+${rewardXP(q)} XP · 💰${rewardGold(q)} · ⬡ +${rewardAttr(q)} ${q.attr}</div>
+        <div class="q-title">${q.title} <span class="hint">(${diff.label} • ${attrLabel(q)}${countdown})</span></div>
+        <div class="q-xp">+${rewardXP(q)} XP · 💰${rewardGold(q)}</div>
       </div>
       <div class="q-sub"></div>
       <div class="q-progress"><div class="q-fill" style="width:0%"></div></div>
@@ -96,7 +98,15 @@ function renderQuests(filter='all'){
     } else if(q.type==='counter'){
       const pct=Math.min(1,(q.count||0)/q.target); fill.style.width=(pct*100)+'%'; sub.textContent=`Count ${q.count||0}/${q.target}`; btnI.classList.remove('hidden'); btnD.classList.remove('hidden');
     } else if(q.type==='checklist'){
-      const done=(q.done||[]).filter(Boolean).length, total=(q.items||[]).length; const pct=total?done/total:0; fill.style.width=(pct*100)+'%'; sub.textContent=`${done}/${total} items`;
+      const listEl = document.createElement('div');
+      (q.items||[]).forEach((label,idx)=>{
+        const row=document.createElement('div'); row.className='ck-row'+((q.done&&q.done[idx])?' done':''); 
+        row.innerHTML=`<div class="ck-dot">${(q.done&&q.done[idx])?'✓':''}</div><div class="ck-label">${label}</div>`;
+        row.onclick=()=>{ q.done= q.done||((q.items||[]).map(()=>false)); q.done[idx]=!q.done[idx]; save(); renderQuests(filter); if(q.done.every(Boolean)&&!q.completed){ finishQuest(q, filter);} };
+        listEl.appendChild(row);
+      });
+      sub.innerHTML=''; sub.appendChild(listEl);
+      const done=(q.done||[]).filter(Boolean).length, total=(q.items||[]).length; const pct=total?done/total:0; fill.style.width=(pct*100)+'%';
     } else if(q.type==='multicounter'){
       const total = q.metrics.reduce((s,m)=>s+m.target,0);
       const have  = q.metrics.reduce((s,m)=>s+Math.min(m.count||0,m.target),0);
@@ -123,7 +133,7 @@ function renderQuests(filter='all'){
     btnC.onclick=()=>finishQuest(q, filter);
     btnReset.onclick=()=>{ resetQuestProgress(q); save(); renderQuests(filter); };
     if(btnP) btnP.onclick=()=>{ q.paused=true; q.pauseTs=Date.now(); save(); renderQuests(filter); };
-    if(btnR) btnR.onclick=()=>{ if(q.paused){ const pausedFor=Date.now()-(q.pauseTs||Date.now()); q.endTs+=pausedFor; q.paused=false; save(); renderQuests(filter);} };
+    if(btnR) btnR.onclick=()=>{ if(q.paused){ const pausedFor=Date.now()- (q.pauseTs||Date.now()); q.endTs+=pausedFor; q.paused=false; save(); renderQuests(filter);} };
     if(btnI) btnI.onclick=()=>{ q.count=Math.min(q.target,(q.count||0)+1); if(q.count>=q.target && !q.completed){ finishQuest(q, filter); } else { save(); renderQuests(filter);} };
     if(btnD) btnD.onclick=()=>{ q.count=Math.max(0,(q.count||0)-1); save(); renderQuests(filter); };
     btnE.onclick=()=>{ populateForm(q); show('create'); $('#appbar-title').textContent='New/Edit Quest'; };
@@ -132,10 +142,15 @@ function renderQuests(filter='all'){
     list.appendChild(node);
   }
 }
+
 function rewardXP(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round((q.xp||0)*m); }
 function rewardGold(q){ const m=DIFF[q.diff||'normal'].mult; return Math.round(10*m); }
-function rewardAttr(q){ return ATTR_REWARD[q.diff||'normal']||1; }
-function applyAttributeReward(q){ const a=q.attr; if(!a) return; state.attrs[a]=(state.attrs[a]||0)+rewardAttr(q); }
+
+function applyAttributeReward(q){
+  const attrs = normalizeAttrs(q.attrs);
+  for(const {name,amt} of attrs){ state.attrs[name]=(state.attrs[name]||0)+amt; }
+}
+
 function resetQuestProgress(q){
   q.completed=false;
   if(q.type==='timer'){ q.started=false; q.paused=false; delete q.startTs; delete q.endTs; delete q.pauseTs; }
@@ -143,6 +158,7 @@ function resetQuestProgress(q){
   if(q.type==='checklist'){ q.done=(q.items||[]).map(()=>false); }
   if(q.type==='multicounter'){ q.metrics=(q.metrics||[]).map(m=>({label:m.label,target:m.target,count:0})); }
 }
+
 function finishQuest(q, filter){
   if(q.completed) return;
   q.completed=true;
@@ -153,177 +169,169 @@ function finishQuest(q, filter){
   notify('Quest Complete', `${q.title} finished!`);
   if(q.repeat && q.repeat!=='none'){
     const next=structuredClone(q); next.id=++state.lastId; resetQuestProgress(next);
-    if(q.deadline){ const d=new Date(q.deadline); if(q.repeat==='daily') d.setDate(d.getDate()+1); if(q.repeat==='weekly') d.setDate(d.getDate()+7); next.deadline=d.getTime(); }
+    if(q.deadline){ const d=new Date(q.deadline); if(q.repeat==='daily') d.setDate(d.getDate()+1); if(q.repeat==='weekly') d.setDate(d.getDate()+7); next.deadline=d.getTime(); next.dayKey = q.daily ? todayKey() : null; }
     state.quests.push(next);
   }
   save(); renderQuests(filter); renderTiles(); drawRadar(); renderJourney();
 }
+
 setInterval(()=>{ let touched=false; for(const q of state.quests){ if(q.type==='timer' && q.started && !q.completed && !q.paused && timerRemaining(q)<=0){ finishQuest(q, currentFilter()); touched=true; } } if(touched){ save(); renderQuests(currentFilter()); } },1000);
 setInterval(()=>{ renderQuests(currentFilter()); },1000);
 function timerRemaining(q){ if(q.paused) return Math.max(0,q.endTs-(q.pauseTs||Date.now())); return Math.max(0,(q.endTs||0)-Date.now()); }
 function formatTime(ms){ const s=Math.max(0,Math.ceil(ms/1000)); const m=Math.floor(s/60); const ss=(''+(s%60)).padStart(2,'0'); const mm=(''+(m%60)).padStart(2,'0'); const hh=Math.floor(m/60); return hh>0?`${hh}:${mm}:${ss}`:`${m}:${ss}`; }
 
-function resetForm(){ const f=$('#quest-form'); f.dataset.editing=''; $('#q-title').value=''; $('#q-desc').value=''; $('#q-attr').value='Physical'; $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-multi').value=''; $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; $('#q-remindtimes').value=''; updateTypeFields(); }
-function populateForm(q){ const f=$('#quest-form'); f.dataset.editing=String(q.id); $('#q-title').value=q.title; $('#q-desc').value=q.desc||''; $('#q-attr').value=q.attr||'Physical'; $('#q-type').value=q.type; $('#q-diff').value=q.diff||'normal'; $('#q-duration').value=Math.round((q.durationMs||0)/60000)||30; $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', '); $('#q-multi').value=(q.metrics||[]).map(m=>`${m.label}:${m.target}`).join(', '); $('#q-deadline').value=q.deadline? new Date(q.deadline).toISOString().slice(0,16):''; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-remind').value=q.remindMin||10; $('#q-remindtimes').value=(q.reminderTimes||[]).join(', '); updateTypeFields(); }
-$('#q-type').onchange=updateTypeFields; function updateTypeFields(){ const t=$('#q-type').value; $$('.if').forEach(el=>el.classList.remove('show')); $$('.if.'+t).forEach(el=>el.classList.add('show')); }
-document.querySelector('#quest-form').addEventListener('submit',(ev)=>{
-  ev.preventDefault();
-  const editingId=$('#quest-form').dataset.editing;
+function getSelectedAttrs(){
+  const rows=$$('.attr'); const amts=$$('.attr-amt'); const out=[];
+  rows.forEach(chk=>{
+    const name=chk.getAttribute('data-for');
+    const amtInput=amts.find(i=>i.getAttribute('data-name')===name);
+    const amt=Math.max(1, Number(amtInput?.value)||1);
+    if(chk.checked){ out.push({name, amt}); }
+  });
+  return out;
+}
+
+function resetForm(){
+  const f=$('#quest-form'); f.dataset.editing='';
+  $('#q-title').value=''; $('#q-desc').value='';
+  $$('.attr').forEach(x=>{ x.checked=false; });
+  $$('.attr-amt').forEach(i=>{ i.value=1; });
+  $('#q-type').value='timer'; $('#q-duration').value=30; $('#q-target').value=10; $('#q-items').value=''; $('#q-multi').value='';
+  $('#q-diff').value='normal'; $('#q-deadline').value=''; $('#q-repeat').value='none'; $('#q-xp').value=25; $('#q-remind').value=10; $('#q-is-daily').checked=false; $('#q-remindtimes').value='';
+  updateTypeUI();
+}
+
+function populateForm(q){
+  const f=$('#quest-form'); f.dataset.editing=q.id;
+  $('#q-title').value=q.title; $('#q-desc').value=q.desc||'';
+  const attrs = normalizeAttrs(q.attrs);
+  $$('.attr').forEach(x=>{ const name=x.getAttribute('data-for'); x.checked=attrs.some(a=>a.name===name); });
+  $$('.attr-amt').forEach(i=>{ const a=attrs.find(a=>a.name===i.getAttribute('data-name')); i.value=a?a.amt:1; });
+  $('#q-type').value=q.type; $('#q-duration').value=(q.durationMin||30); $('#q-target').value=q.target||10; $('#q-items').value=(q.items||[]).join(', ');
+  $('#q-multi').value = (q.metrics||[]).map(m=>`${m.label}:${m.target}`).join(', ');
+  $('#q-diff').value=q.diff||'normal'; $('#q-repeat').value=q.repeat||'none'; $('#q-xp').value=q.xp||25; $('#q-is-daily').checked=!!q.daily;
+  if(q.deadline){ const d=new Date(q.deadline); const s=d.toISOString().slice(0,16); $('#q-deadline').value=s; } else { $('#q-deadline').value=''; }
+  $('#q-remind').value=q.remind||10; $('#q-remindtimes').value=(q.remindTimes||[]).join(', ');
+  updateTypeUI();
+}
+
+function updateTypeUI(){
   const t=$('#q-type').value;
-  const quest={ id:editingId?Number(editingId):++state.lastId, title:$('#q-title').value.trim(), desc:$('#q-desc').value.trim(), attr:$('#q-attr').value, type:t, diff:$('#q-diff').value, repeat:'none', xp:Number($('#q-xp').value)||0, completed:false, remindMin:Number($('#q-remind').value)||0, daily:false, penalty:false, dayKey:null, reminderTimes: $('#q-remindtimes').value.split(',').map(s=>s.trim()).filter(Boolean) };
-  const deadlineStr=$('#q-deadline').value; quest.deadline = deadlineStr? new Date(deadlineStr).getTime(): null;
-  if(t==='timer'){ const mins=Math.max(1, Number($('#q-duration').value)||30); quest.durationMs=mins*60000; quest.started=false; quest.paused=false; }
-  if(t==='counter'){ quest.target=Math.max(1, Number($('#q-target').value)||10); quest.count = editingId ? (state.quests.find(x=>x.id===quest.id)?.count||0):0; }
-  if(t==='checklist'){ quest.items=$('#q-items').value.split(',').map(s=>s.trim()).filter(Boolean); quest.done = editingId ? (state.quests.find(x=>x.id===quest.id)?.done||quest.items.map(()=>false)) : quest.items.map(()=>false); }
-  if(t==='multicounter'){ quest.metrics = $('#q-multi').value.split(',').map(s=>s.trim()).filter(Boolean).map(pair=>{ const p=pair.split(':'); const label=p[0].trim(); const target=Math.max(1, Number(p[1])||1); const existing=editingId? (state.quests.find(x=>x.id===quest.id)?.metrics||[]):[]; const found=existing.find(m=>m.label===label); return {label,target,count:found?found.count:0}; }); }
-  if(editingId){ const idx=state.quests.findIndex(x=>x.id===quest.id); state.quests[idx]=quest; } else { state.quests.push(quest); }
-  save(); renderQuests(currentFilter()); show('quests'); $('#appbar-title').textContent='ShadowHUD v11.2 — Quests';
-});
+  $$('.if').forEach(x=>x.classList.remove('show'));
+  $$('.if.'+t).forEach(x=>x.classList.add('show'));
+}
+$('#q-type').onchange=updateTypeUI;
 
-const DAILY_TEMPLATES=[
-  {title:'Meditate for 10 minutes', attr:'Spiritual', type:'timer', mins:10, diff:'easy', xp:12},
-  {title:'Read 15 pages of a book', attr:'Intellect', type:'counter', target:15, diff:'normal', xp:20},
-  {title:'Stretch routine 15 min', attr:'Physical', type:'timer', mins:15, diff:'normal', xp:24},
-  {title:'Write in journal (3 prompts)', attr:'Psyche', type:'checklist', items:['Gratitude x3','One win','One focus'], diff:'easy', xp:15},
-  {title:'Deep clean a room', attr:'Social', type:'checklist', items:['Declutter','Wipe surfaces','Vacuum'], diff:'hard', xp:35},
-  {title:'Cold shower (3 minutes)', attr:'Psyche', type:'timer', mins:3, diff:'hard', xp:28},
-  {title:'Study/Skill practice 30 min', attr:'Intellect', type:'timer', mins:30, diff:'hard', xp:40},
-  {title:'Call or text a loved one', attr:'Social', type:'counter', target:1, diff:'easy', xp:10},
-  {title:'Cook a healthy meal', attr:'Physical', type:'checklist', items:['Prep','Cook','Clean'], diff:'normal', xp:25}
-];
-const STRENGTH_MULTI={
-  title:'Strength Training',
-  attr:'Physical', type:'multicounter', diff:'elite', xp:60,
-  metrics:[ {label:'Pushups', target:100, count:0},{label:'Sit-ups', target:100, count:0},{label:'Squats', target:100, count:0},{label:'Run (miles)', target:1, count:0} ]
+$('#quest-form').onsubmit=(e)=>{
+  e.preventDefault();
+  const id = $('#quest-form').dataset.editing? Number($('#quest-form').dataset.editing): ++state.lastId;
+  const t = $('#q-type').value;
+  const q = {
+    id, title:$('#q-title').value.trim(), desc:$('#q-desc').value.trim(),
+    attrs:getSelectedAttrs(),
+    type:t, diff:$('#q-diff').value, repeat:$('#q-repeat').value, xp:Number($('#q-xp').value||0),
+    daily:$('#q-is-daily').checked,
+    remind:Number($('#q-remind').value||0), remindTimes:($('#q-remindtimes').value||'').split(',').map(s=>s.trim()).filter(Boolean)
+  };
+  if(t==='timer'){ q.durationMin=Number($('#q-duration').value||30); q.durationMs=q.durationMin*60*1000; }
+  if(t==='counter'){ q.target=Number($('#q-target').value||10); q.count=0; }
+  if(t==='checklist'){ q.items=($('#q-items').value||'').split(',').map(s=>s.trim()).filter(Boolean); q.done=q.items.map(()=>false); }
+  if(t==='multicounter'){ q.metrics=($('#q-multi').value||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>{ const [label,tar]=s.split(':'); return {label:label.trim(), target:Number(tar||1), count:0}; }); }
+  const dl=$('#q-deadline').value; q.deadline= dl? new Date(dl).getTime(): null;
+  if(q.daily){ q.deadline=endOfToday(); }
+
+  const idx = state.quests.findIndex(x=>x.id===id);
+  if(idx>=0) state.quests[idx]=q; else state.quests.unshift(q);
+  save(); renderQuests(currentFilter()); show('quests'); $('#appbar-title').textContent='ShadowHUD v11.4 — Quests';
 };
-const PENALTY_TEMPLATES=[
-  {title:'Penalty — Do 50 pushups', attr:'Physical', type:'counter', target:50, diff:'hard', xp:18},
-  {title:'Penalty — 60-second cold shower', attr:'Psyche', type:'timer', mins:1, diff:'hard', xp:16},
-  {title:'Penalty — Clean your desk', attr:'Social', type:'checklist', items:['Clear','Wipe','Organize'], diff:'normal', xp:14},
-  {title:'Penalty — 100 squats', attr:'Physical', type:'counter', target:100, diff:'elite', xp:30},
-  {title:'Penalty — 20 minute brisk walk', attr:'Physical', type:'timer', mins:20, diff:'normal', xp:18}
-];
-function pickRandom(arr,n){ const a=[...arr]; const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
-function ensureStrengthTraining(dayKey){
-  const exists = state.quests.some(q=>q.daily && q.dayKey===dayKey && q.title==='Strength Training');
-  if(exists) return;
-  const base = JSON.parse(JSON.stringify(STRENGTH_MULTI));
-  base.id=++state.lastId; base.completed=false; base.remindMin=10; base.daily=true; base.penalty=false; base.dayKey=dayKey; base.deadline=endOfToday();
-  state.quests.push(base);
-}
-function generateDailySet(dayKey){
-  ensureStrengthTraining(dayKey);
-  const already = new Set(state.quests.filter(q=>q.daily && q.dayKey===dayKey).map(q=>q.title));
-  const pool = DAILY_TEMPLATES.filter(t=>!already.has(t.title));
-  const picks = pickRandom(pool, Math.min(2, pool.length));
-  for(const t of picks){
-    const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:10, daily:true, penalty:false, dayKey, deadline:endOfToday() };
-    if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; }
-    if(t.type==='counter'){ q.target=t.target||1; q.count=0; }
-    if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); }
-    state.quests.push(q);
-  }
-}
-function generatePenaltiesFor(dayKeyMissed){
-  const missed = state.quests.filter(q=>q.daily && q.dayKey===dayKeyMissed && !q.completed);
-  if(!missed.length) return;
-  const count = Math.min(3, missed.length);
-  const picks = pickRandom(PENALTY_TEMPLATES, count);
-  for(const t of picks){
-    const q={ id: ++state.lastId, title:t.title, desc:'', attr:t.attr, type:t.type, diff:t.diff, repeat:'none', xp:t.xp, completed:false, remindMin:0, daily:false, penalty:true, dayKey: todayKey(), deadline:endOfToday() };
-    if(t.type==='timer'){ q.durationMs=(t.mins||10)*60000; q.started=false; }
-    if(t.type==='counter'){ q.target=t.target||1; q.count=0; }
-    if(t.type==='checklist'){ q.items=t.items||[]; q.done=(q.items||[]).map(()=>false); }
-    state.quests.push(q);
-  }
-}
-function deleteUnfinishedDaily(dayKeyMissed){
-  state.quests = state.quests.filter(q=> !(q.daily && q.dayKey===dayKeyMissed && !q.completed) );
-}
-function onNewDay(prevKey, currentKey){
-  if(prevKey){
-    const didCompleteYesterday = state.stats.lastCompletionDay === prevKey;
-    state.stats.currentStreak = didCompleteYesterday ? (state.stats.currentStreak||0)+1 : 0;
-    state.stats.longestStreak = Math.max(state.stats.longestStreak||0, state.stats.currentStreak);
-    generatePenaltiesFor(prevKey);
-    deleteUnfinishedDaily(prevKey);
-  }
-  state.notifSent[currentKey] = {};
-  generateDailySet(currentKey);
-  state.lastDailyKey = currentKey;
-  save();
-}
 
-function renderShop(){ const list=$('#shop-list'); list.innerHTML=''; const items=state.shop||[]; $('#shop-empty').style.display = items.length?'none':'block'; for(const it of items){ const node=document.createElement('div'); node.className='card'; node.innerHTML=`<div class="q-top"><div class="q-title">${it.title}</div><div class="q-xp">💰 ${it.cost}</div></div><div class="q-sub">${it.desc||''}</div><div class="q-actions"><button class="btn small buy">Buy</button><div class="spacer"></div><button class="btn small del">Delete</button></div>`; node.querySelector('.buy').onclick=()=>{ if(state.player.gold<(it.cost||0)) return alert('Not enough gold'); state.player.gold-=it.cost||0; save(); renderWallet(); }; node.querySelector('.del').onclick=()=>{ state.shop=state.shop.filter(x=>x.id!==it.id); save(); renderShop(); }; list.appendChild(node); } }
-$('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); }; $('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
-document.querySelector('#reward-form').addEventListener('submit',(ev)=>{ ev.preventDefault(); const item={ id:Date.now(), title:$('#r-title').value.trim(), desc:$('#r-desc').value.trim(), cost:Math.max(1,Number($('#r-cost').value)||1) }; state.shop.push(item); save(); $('#r-title').value=''; $('#r-desc').value=''; $('#r-cost').value=50; $('#reward-form').classList.add('hidden'); renderShop(); });
+// Store
+function renderShop(){
+  $('#gold2').textContent=state.player.gold||0;
+  const list=$('#shop-list'); list.innerHTML='';
+  if(!state.shop.length) $('#shop-empty').style.display='block'; else $('#shop-empty').style.display='none';
+  state.shop.forEach((r,i)=>{
+    const card=document.createElement('div'); card.className='card ach';
+    card.innerHTML=`<div><div style="font-weight:700">${r.title}</div><div class="hint">${r.desc||''}</div></div><div>💰 ${r.cost} <button class="btn small primary buy">Buy</button></div>`;
+    card.querySelector('.buy').onclick=()=>{ if((state.player.gold||0)>=r.cost){ state.player.gold-=r.cost; save(); renderShop(); renderWallet(); } };
+    list.appendChild(card);
+  });
+}
+$('#btn-add-reward').onclick=()=>{ $('#reward-form').classList.remove('hidden'); };
+$('#r-cancel').onclick=()=>{ $('#reward-form').classList.add('hidden'); };
+$('#reward-form').onsubmit=(e)=>{ e.preventDefault(); state.shop.push({title:$('#r-title').value.trim(),desc:$('#r-desc').value.trim(),cost:Number($('#r-cost').value||1)}); save(); $('#reward-form').classList.add('hidden'); renderShop(); };
 
-let focus={running:false,endTs:0,paused:false,pauseTs:0,timer:null,startedAt:0};
-function updateFocusUI(){ const runningNow = focus.running && (focus.endTs>Date.now()); const remaining=Math.max(0, focus.paused ? focus.endTs-(focus.pauseTs||Date.now()) : focus.endTs-Date.now()); $('#focus-time').textContent=formatTime(remaining); $('#focus-start').classList.toggle('hidden',runningNow); $('#focus-pause').classList.toggle('hidden',!(runningNow&&!focus.paused)); $('#focus-resume').classList.toggle('hidden',!(runningNow&&focus.paused)); }
-$('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value)||25); focus.running=true; focus.paused=false; focus.startedAt=Date.now(); focus.endTs=focus.startedAt+mins*60000; if(focus.timer) clearInterval(focus.timer); focus.timer=setInterval(()=>{ const left=focus.endTs-Date.now(); updateFocusUI(); if(left<=0){ clearInterval(focus.timer); focus.running=false; const minutes=Math.round((Date.now()-focus.startedAt)/60000); state.stats.focusMinutes += minutes; notify('Focus complete','Great work!'); save(); updateFocusUI(); } },500); updateFocusUI(); };
-$('#focus-pause').onclick=()=>{ focus.paused=true; focus.pauseTs=Date.now(); updateFocusUI(); };
-$('#focus-resume').onclick=()=>{ if(focus.paused){ const pausedFor=Date.now()-focus.pauseTs; focus.endTs+=pausedFor; focus.paused=false; updateFocusUI(); } };
-$('#focus-cancel').onclick=()=>{ focus.running=false; if(focus.timer) clearInterval(focus.timer); updateFocusUI(); };
+// Focus simple timer (no app lock)
+let focusInterval=null, focusEnd=0, focusPaused=false, pauseTs=0;
+function updateFocusUI(){
+  const left=Math.max(0, Math.ceil((focusEnd-(focusPaused?pauseTs:Date.now()))/1000));
+  const mm=String(Math.floor(left/60)).padStart(2,'0'); const ss=String(left%60).padStart(2,'0');
+  $('#focus-time').textContent = `${mm}:${ss}`;
+  $('#focus-pause').classList.toggle('hidden', !(focusEnd && !focusPaused));
+  $('#focus-resume').classList.toggle('hidden', !(focusEnd && focusPaused));
+}
+$('#focus-start').onclick=()=>{ const mins=Math.max(1, Number($('#focus-mins').value||25)); focusEnd=Date.now()+mins*60*1000; focusPaused=false; clearInterval(focusInterval); focusInterval=setInterval(()=>{ updateFocusUI(); if(Date.now()>=focusEnd && !focusPaused){ clearInterval(focusInterval); notify('Focus complete','Nice work!'); }}, 200); updateFocusUI(); };
+$('#focus-pause').onclick=()=>{ focusPaused=true; pauseTs=Date.now(); updateFocusUI(); };
+$('#focus-resume').onclick=()=>{ if(focusPaused){ const paused=Date.now()-pauseTs; focusEnd+=paused; focusPaused=false; updateFocusUI(); } };
+$('#focus-cancel').onclick=()=>{ focusEnd=0; clearInterval(focusInterval); updateFocusUI(); };
 
-function checkReminders(){
-  if(!('Notification' in window) || Notification.permission!=='granted') return;
-  const day=todayKey();
-  if(!state.notifSent[day]) state.notifSent[day]={};
-  const hhmm = nowHHMM();
+// Daily/penalty midnight rollover
+function midnightSweep(){
+  const key=todayKey(); if(state.lastDailyKey===key) return;
+  // handle streaks
+  if(state.stats.lastCompletionDay){ const prev=new Date(state.stats.lastCompletionDay); const today=new Date(key); const diff=(today - new Date(prev.getFullYear(),prev.getMonth(),prev.getDate()))/86400000; if(diff===1) state.stats.currentStreak++; else state.stats.currentStreak=0; } else { state.stats.currentStreak=0; }
+  state.stats.longestStreak=Math.max(state.stats.longestStreak,state.stats.currentStreak);
+
+  const newList=[]; const penalties=[];
   for(const q of state.quests){
-    if(q.completed) continue;
-    const times=(q.reminderTimes||[]);
-    if(!times.length) continue;
-    const sentForQuest = state.notifSent[day][q.id] || {};
-    for(const t of times){
-      if(t===hhmm && !sentForQuest[t]){
-        notify('Reminder: '+q.title, q.attr+' quest');
-        sentForQuest[t]=true;
-      }
+    if(q.daily){
+      if(!q.completed){ penalties.push(makePenalty()); }
+      // drop old daily
+    }else{
+      newList.push(q);
     }
-    state.notifSent[day][q.id]=sentForQuest;
   }
+  state.quests=newList.concat(penalties);
+  state.lastDailyKey=key;
   save();
+  renderQuests(currentFilter());
 }
-setInterval(checkReminders, 30000);
+function makePenalty(){
+  const samples=[
+    {title:'Penalty — 50 push-ups', type:'counter', target:50},
+    {title:'Penalty — Cold shower', type:'timer', durationMin:5, durationMs:5*60*1000},
+    {title:'Penalty — 15min study', type:'timer', durationMin:15, durationMs:15*60*1000}
+  ];
+  const pick=samples[Math.floor(Math.random()*samples.length)];
+  const q={ id:++state.lastId, title:pick.title, attrs:[{name:'Physical',amt:1}], type:pick.type, diff:'normal', repeat:'none', xp:20, penalty:true, daily:false };
+  if(q.type==='counter'){ q.target=pick.target; q.count=0; }
+  if(q.type==='timer'){ q.durationMin=pick.durationMin; q.durationMs=pick.durationMs; }
+  return q;
+}
+setInterval(midnightSweep, 10_000);
 
-const ACH = [
-  {id:'lv10',  name:'Apprentice', desc:'Reach Level 10',  check: s=>s.player.level>=10},
-  {id:'lv50',  name:'Veteran',    desc:'Reach Level 50',  check: s=>s.player.level>=50},
-  {id:'lv100', name:'Shadow Monarch', desc:'Reach Level 100', check: s=>s.player.level>=100},
-  {id:'q10',   name:'Getting Things Done', desc:'Complete 10 quests', check: s=>s.stats.completed>=10},
-  {id:'q50',   name:'Task Slayer', desc:'Complete 50 quests', check: s=>s.stats.completed>=50},
-  {id:'gold1', name:'Shopper',     desc:'Earn 500 gold total', check: s=>s.stats.goldEarned>=500},
-  {id:'streak3', name:'Consistency', desc:'3-day streak', check: s=>s.stats.longestStreak>=3},
-  {id:'streak7', name:'Iron Will', desc:'7-day streak', check: s=>s.stats.longestStreak>=7},
-  {id:'pen5',  name:'Redeemer',    desc:'Clear 5 penalty quests', check: s=>s.stats.penaltiesCleared>=5},
-  {id:'focus5',name:'Deep Worker', desc:'Accumulate 300 focus minutes', check: s=>s.stats.focusMinutes>=300}
-];
+// Seed a default daily Strength Training template if empty
+if(!state._seeded){ 
+  const q={ id:++state.lastId, title:'Strength Training', type:'multicounter', diff:'elite', repeat:'none', xp:60, daily:true, deadline:endOfToday(), attrs:[{name:'Physical',amt:2}], 
+    metrics:[{label:'Pushups',target:100,count:0},{label:'Sit-ups',target:100,count:0},{label:'Squats',target:100,count:0},{label:'Run (miles)',target:1,count:0}] };
+  state.quests.unshift(q); state._seeded=true; save();
+}
+
 function renderJourney(){
-  $('#j-level').textContent = `Lv ${state.player.level} (${rankForLevel(state.player.level)})`;
-  $('#j-xp').style.width = Math.max(0,Math.min(100,(state.player.xp/state.player.xpNext)*100))+'%';
-  $('#j-completed').textContent = `${state.stats.completed} total`;
-  const completePct = Math.min(1, state.stats.completed/50);
-  $('#j-complete-bar').style.width = (completePct*100)+'%';
-  $('#j-streak').textContent = `${state.stats.currentStreak} (best ${state.stats.longestStreak})`;
-  $('#j-streak-bar').style.width = Math.min(100, state.stats.currentStreak*10)+'%';
-  $('#j-gold').textContent = `${state.stats.goldEarned} earned`;
-  const list = $('#achievements'); list.innerHTML='';
-  for(const a of ACH){
-    const done = a.check(state);
-    const row = document.createElement('div'); row.className='ach'+(done?' done':'');
-    row.innerHTML = `<div><div style="font-weight:700">${a.name}</div><div class="hint">${a.desc}</div></div><div>${done?'✅':'⬜️'}</div>`;
-    list.appendChild(row);
-  }
+  $('#j-level').textContent=`Lv ${state.player.level} (${rankForLevel(state.player.level)})`;
+  $('#j-xp').style.width=Math.min(100,(state.player.xp/state.player.xpNext*100))+'%';
+  $('#j-completed').textContent=String(state.stats.completed||0)+' total';
+  const c=Math.min(100,(state.stats.completed||0)%20*5); $('#j-complete-bar').style.width=c+'%';
+  $('#j-gold').textContent=state.stats.goldEarned||0;
+  $('#j-streak').textContent=state.stats.currentStreak||0; $('#j-streak-bar').style.width=Math.min(100,(state.stats.currentStreak||0)/30*100)+'%';
+  const ach=$('#achievements'); ach.innerHTML='';
+  const list=[
+    {id:'first',name:'First Steps',desc:'Complete 1 quest',ok:(state.stats.completed||0)>=1},
+    {id:'sprout',name:'Growing',desc:'Complete 10 quests',ok:(state.stats.completed||0)>=10},
+    {id:'grit',name:'Streak x3',desc:'3-day streak',ok:(state.stats.currentStreak||0)>=3}
+  ];
+  list.forEach(a=>{ const el=document.createElement('div'); el.className='ach'+(a.ok?' done':''); el.innerHTML=`<div>${a.name}<div class="hint">${a.desc}</div></div><div>${a.ok?'✓':''}</div>`; ach.appendChild(el); });
 }
 
-function init(){
-  if(!state.player){ state.player={level:1,xp:0,xpNext:xpToNext(1),gold:0}; }
-  state.player.xpNext = xpToNext(state.player.level);
-  const today = todayKey();
-  if(state.lastDailyKey !== today){ onNewDay(state.lastDailyKey, today); }
-  renderWallet(); renderLevel(); renderTiles(); drawRadar(); renderQuests('all'); renderShop(); renderJourney();
-  if('Notification' in window && Notification.permission==='default'){ setTimeout(()=>Notification.requestPermission(), 600); }
-  updateFocusUI(); checkReminders();
-}
-window.addEventListener('DOMContentLoaded', init);
+// Initial render
+renderWallet(); renderLevel(); renderTiles(); renderQuests('all'); renderJourney();

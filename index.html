@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>ShadowHUD v11.2</title>
+  <title>ShadowHUD v11.4</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 </head>
 <body class="app">
   <header class="appbar">
-    <div id="appbar-title">ShadowHUD <span class="ver">v11.2</span></div>
+    <div id="appbar-title">ShadowHUD <span class="ver">v11.4</span></div>
     <div class="spacer"></div>
     <button id="btn-plus" class="icon" type="button">＋</button>
   </header>
@@ -68,16 +68,17 @@
       <form id="quest-form" class="card form" autocomplete="off">
         <label>Title <input id="q-title" required></label>
         <label>Description <input id="q-desc" placeholder="Optional"></label>
-        <label>Attribute
-          <select id="q-attr">
-            <option>Physical</option>
-            <option>Psyche</option>
-            <option>Intellect</option>
-            <option>Social</option>
-            <option>Spiritual</option>
-            <option>Financial</option>
-          </select>
-        </label>
+
+        <fieldset class="attrs">
+          <legend>Attribute rewards (choose & set amount)</legend>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Physical"> Physical <input class="attr-amt" data-name="Physical" type="number" min="1" value="1"></label>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Psyche"> Psyche <input class="attr-amt" data-name="Psyche" type="number" min="1" value="1"></label>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Intellect"> Intellect <input class="attr-amt" data-name="Intellect" type="number" min="1" value="1"></label>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Social"> Social <input class="attr-amt" data-name="Social" type="number" min="1" value="1"></label>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Spiritual"> Spiritual <input class="attr-amt" data-name="Spiritual" type="number" min="1" value="1"></label>
+          <label class="arow"><input type="checkbox" class="attr" data-for="Financial"> Financial <input class="attr-amt" data-name="Financial" type="number" min="1" value="1"></label>
+        </fieldset>
+
         <label>Type
           <select id="q-type">
             <option value="timer">Timer</option>
@@ -86,6 +87,7 @@
             <option value="multicounter">Multi-counter</option>
           </select>
         </label>
+
         <div class="if timer"><label>Duration (minutes) <input id="q-duration" type="number" min="1" value="30"></label></div>
         <div class="if counter"><label>Target Count <input id="q-target" type="number" min="1" value="10"></label></div>
         <div class="if checklist"><label>Checklist (comma separated) <input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
@@ -93,6 +95,7 @@
           <label>Multi-counter items (label:target, comma separated)</label>
           <input id="q-multi" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1">
         </div>
+
         <label>Difficulty
           <select id="q-diff">
             <option value="easy">Easy</option>
@@ -102,7 +105,9 @@
             <option value="boss">Boss</option>
           </select>
         </label>
+
         <label>Deadline <input id="q-deadline" type="datetime-local"></label>
+
         <label>Repeat
           <select id="q-repeat">
             <option value="none">None</option>
@@ -110,6 +115,9 @@
             <option value="weekly">Weekly</option>
           </select>
         </label>
+
+        <label><input id="q-is-daily" type="checkbox"> Treat as Daily (resets at midnight & may create penalties)</label>
+
         <label>Base Reward XP <input id="q-xp" type="number" min="0" value="25"></label>
         <label>Reminder times (HH:MM, comma) <input id="q-remindtimes" placeholder="07:00, 12:30, 20:00"></label>
         <label>Notify before deadline (minutes) <input id="q-remind" type="number" min="0" value="10"></label>
@@ -118,7 +126,7 @@
           <button type="button" id="btn-cancel" class="btn">Cancel</button>
         </div>
       </form>
-      <div class="card tiny hint">Daily/Penalty tags appear above titles (no overlap).</div>
+      <div class="card tiny hint">Daily/Penalty tags appear above the title. Checklist items use tappable circles.</div>
     </section>
 
     <section id="screen-store" class="screen">
