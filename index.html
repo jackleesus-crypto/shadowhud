@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ShadowHUD v12.7</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/theme-classic.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="left"></div>
+    <div class="title">ShadowHUD <span class="ver">v12.7</span></div>
+    <div class="right"><span id="gold">💰 0</span></div>
+  </header>
+
+  <main id="content"></main>
+
+  <nav class="tabbar">
+    <button data-tab="quests" class="active">Quest</button>
+    <button data-tab="journey">Journey</button>
+    <button data-tab="character">Character</button>
+    <button data-tab="store">Store</button>
+    <button data-tab="focus">Focus</button>
+  </nav>
+
+  <button id="fab" class="fab">+</button>
+
+  <template id="quest-card-tpl">
+    <section class="card quest">
+      <div class="chip chip--purple chip--pos">Daily</div>
+      <div class="row between">
+        <div class="qtitle"></div>
+        <div class="rewards"><span class="xp"></span> • <span class="ap"></span> • <span class="gold"></span></div>
+      </div>
+      <div class="meta"></div>
+      <div class="progress"><div class="bar"></div></div>
+      <div class="countdown">resets in <span class="left"></span></div>
+      <div class="actions"></div>
+    </section>
+  </template>
+
+  <script type="module" src="scripts/app.js"></script>
+</body>
+</html>
