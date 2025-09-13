@@ -1,1 +1,0 @@
-Upload all files to your GitHub Pages root (or /docs). Clear Safari website data after replacing. This build v12.3 matches the earlier visual style and keeps all new features.
