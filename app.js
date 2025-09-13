@@ -238,7 +238,7 @@ $('#quest-form').onsubmit=(e)=>{
   if(t==='checklist'){ q.items=($('#q-items').value||'').split(',').map(s=>s.trim()).filter(Boolean); q.done=q.items.map(()=>false); }
   if(t==='multicounter'){ q.metrics=($('#q-multi').value||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>{ const [label,tar]=s.split(':'); return {label:label.trim(), target:Number(tar||1), count:0}; }); }
   const dl=$('#q-deadline').value; q.deadline= dl? new Date(dl).getTime(): null;
-  if(q.daily){ q.deadline=endOfToday(); }
+  if(q.daily){ q.deadline=endOfToday(); q.dayKey=todayKey(); }
 
   const idx = state.quests.findIndex(x=>x.id===id);
   if(idx>=0) state.quests[idx]=q; else state.quests.unshift(q);
@@ -277,6 +277,35 @@ $('#focus-cancel').onclick=()=>{ focusEnd=0; clearInterval(focusInterval); updat
 
 // Daily/penalty midnight rollover
 function midnightSweep(){
+  const key=todayKey();
+  if(state.lastDailyKey===key) return;
+  // streak handling
+  if(state.stats.lastCompletionDay){
+    const prev=new Date(state.stats.lastCompletionDay);
+    const today=new Date(key);
+    const diff=(today - new Date(prev.getFullYear(),prev.getMonth(),prev.getDate()))/86400000;
+    if(diff===1) state.stats.currentStreak++; else state.stats.currentStreak=0;
+  } else {
+    state.stats.currentStreak=0;
+  }
+  state.stats.longestStreak=Math.max(state.stats.longestStreak,state.stats.currentStreak);
+
+  const keep=[], penalties=[];
+  for(const q of state.quests){
+    if(q.daily){
+      if(!q.completed){ penalties.push(makePenalty()); }
+      // drop yesterday's daily
+    }else{
+      keep.push(q);
+    }
+  }
+  state.quests = keep.concat(penalties);
+  // add today's default dailies
+  addDefaultDailiesForToday();
+  state.lastDailyKey = key;
+  save();
+  renderQuests(currentFilter());
+}
   const key=todayKey(); if(state.lastDailyKey===key) return;
   // handle streaks
   if(state.stats.lastCompletionDay){ const prev=new Date(state.stats.lastCompletionDay); const today=new Date(key); const diff=(today - new Date(prev.getFullYear(),prev.getMonth(),prev.getDate()))/86400000; if(diff===1) state.stats.currentStreak++; else state.stats.currentStreak=0; } else { state.stats.currentStreak=0; }
@@ -310,8 +339,58 @@ function makePenalty(){
 }
 setInterval(midnightSweep, 10_000);
 
-// Seed a default daily Strength Training template if empty
-if(!state._seeded){ 
+
+function addDefaultDailiesForToday(){
+  const key=todayKey();
+  // Don't duplicate if there are already dailies for today
+  const hasTodayDaily = state.quests.some(q=>q.daily && q.dayKey===key);
+  if(hasTodayDaily) return;
+
+  const defaults = [];
+
+  // Strength Training multi-counter
+  defaults.push({
+    id: ++state.lastId,
+    title:'Strength Training',
+    type:'multicounter',
+    diff:'elite',
+    repeat:'none',
+    xp:60,
+    daily:true,
+    dayKey:key,
+    deadline:endOfToday(),
+    attrs:[{name:'Physical',amt:2}],
+    metrics:[
+      {label:'Pushups',target:100,count:0},
+      {label:'Sit-ups',target:100,count:0},
+      {label:'Squats',target:100,count:0},
+      {label:'Run (miles)',target:1,count:0}
+    ]
+  });
+
+  // A couple helpful self-care dailies
+  defaults.push({
+    id: ++state.lastId,
+    title:'Meditate 10 min',
+    type:'timer', durationMin:10, durationMs:10*60*1000,
+    diff:'normal', xp:20, daily:true, dayKey:key, deadline:endOfToday(),
+    attrs:[{name:'Spiritual',amt:1},{name:'Psyche',amt:1}]
+  });
+  defaults.push({
+    id: ++state.lastId,
+    title:'Journal 1 page',
+    type:'checklist', items:['What went well?','What to improve?','One intention for tomorrow'], done:[false,false,false],
+    diff:'easy', xp:12, daily:true, dayKey:key, deadline:endOfToday(),
+    attrs:[{name:'Intellect',amt:1},{name:'Psyche',amt:1}]
+  });
+
+  // Insert at top
+  state.quests = defaults.concat(state.quests);
+}
+
+// Daily defaults seeding function injected above
+
+/*seed removed*/ if(false){ 
   const q={ id:++state.lastId, title:'Strength Training', type:'multicounter', diff:'elite', repeat:'none', xp:60, daily:true, deadline:endOfToday(), attrs:[{name:'Physical',amt:2}], 
     metrics:[{label:'Pushups',target:100,count:0},{label:'Sit-ups',target:100,count:0},{label:'Squats',target:100,count:0},{label:'Run (miles)',target:1,count:0}] };
   state.quests.unshift(q); state._seeded=true; save();
@@ -334,4 +413,4 @@ function renderJourney(){
 }
 
 // Initial render
-renderWallet(); renderLevel(); renderTiles(); renderQuests('all'); renderJourney();
+addDefaultDailiesForToday(); renderWallet(); renderLevel(); renderTiles(); renderQuests('all'); renderJourney();
