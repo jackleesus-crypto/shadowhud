@@ -1,20 +1,4 @@
 
-// --- Diagnostic overlay ---
-(function(){
-  function set(t){ try{document.getElementById('diag').textContent=t;}catch(e){} }
-  set('JS loaded…');
-  window.addEventListener('error',e=>set('Error: '+(e.message||e.error)), true);
-  window.addEventListener('unhandledrejection',e=>set('Promise: '+e.reason));
-  document.addEventListener('DOMContentLoaded',()=>{
-    set('JS OK @ '+new Date().toLocaleTimeString());
-    const testBtn=document.createElement('button');
-    testBtn.textContent='Tap test'; testBtn.style.marginLeft='8px';
-    testBtn.onclick=()=>set('Tap received @ '+new Date().toLocaleTimeString());
-    document.getElementById('diag').appendChild(testBtn);
-  });
-})();
-
-
 // Polyfills & guards
 (function(){
   if(typeof window.structuredClone!=='function'){
