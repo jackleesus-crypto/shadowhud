@@ -4,77 +4,95 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>ShadowHUD v11.7</title>
+  <title>ShadowHUD v11.8</title>
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css?v=118"/>
 </head>
 <body>
-  <header class="bar">ShadowHUD <span class="ver">v11.7</span> <span class="gold">💰 <span id="gold">0</span></span></header>
+  <header class="appbar">
+    <div class="brand">ShadowHUD <span class="ver">v11.8</span></div>
+    <div class="spacer"></div>
+    <div class="gold">💰 <span id="gold">0</span></div>
+  </header>
 
-  <main>
-    <section id="screen-quests" class="screen visible">
-      <div class="row">
+  <main class="content">
+    <section id="screen-quests" class="screen">
+      <h2 class="section">Quests</h2>
+      <div class="filters">
         <button class="chip active" data-filter="all">All</button>
         <button class="chip" data-filter="daily">Daily</button>
         <button class="chip" data-filter="penalty">Penalty</button>
         <button class="chip" data-filter="active">Active</button>
         <button class="chip" data-filter="completed">Done</button>
       </div>
-      <div id="quest-list" class="list"></div>
+      <div id="quest-list" class="stack"></div>
       <div id="empty-quests" class="empty">No quests yet. Tap ＋ to add.</div>
-      <div class="fab" id="fab-add">＋</div>
+      <button id="fab-add" class="fab">＋</button>
     </section>
 
-    <section id="screen-journey" class="screen">
+    <section id="screen-journey" class="screen hidden">
+      <h2 class="section">Journey</h2>
       <div class="card">
-        <h3>Progress</h3>
-        <div>Level <span id="lvl">1</span> (<span id="rank">E</span>)</div>
-        <div class="bar2"><div id="xpbar"></div></div>
-        <div>XP: <span id="xp">0</span>/<span id="xpreq">0</span></div>
-        <div>Completed: <span id="done">0</span></div>
-        <div>Streak: <span id="streak">0</span></div>
-      </div>
-      <div class="card">
-        <h3>Achievements</h3>
-        <ul id="ach"></ul>
-      </div>
-    </section>
-
-    <section id="screen-character" class="screen">
-      <div class="card">
-        <h3>Attributes</h3>
-        <div class="grid">
-          <div class="tile"><div>PHYSICAL</div><div id="attr-Physical">0</div></div>
-          <div class="tile"><div>PSYCHE</div><div id="attr-Psyche">0</div></div>
-          <div class="tile"><div>INTELLECT</div><div id="attr-Intellect">0</div></div>
-          <div class="tile"><div>SOCIAL</div><div id="attr-Social">0</div></div>
-          <div class="tile"><div>SPIRITUAL</div><div id="attr-Spiritual">0</div></div>
-          <div class="tile"><div>FINANCIAL</div><div id="attr-Financial">0</div></div>
+        <div class="row between">
+          <div class="lvl">Level <span id="lvl">1</span> · <span id="rank">E</span></div>
+          <div class="xp"><span id="xp">0</span>/<span id="xpreq">0</span> XP</div>
+        </div>
+        <div class="bar"><div id="xpbar"></div></div>
+        <div class="row stats">
+          <div><b>Completed</b><br><span id="done">0</span></div>
+          <div><b>Streak</b><br><span id="streak">0</span></div>
+          <div><b>Gold</b><br><span id="jg">0</span></div>
         </div>
       </div>
+      <div class="card">
+        <div class="title">Achievements</div>
+        <ul id="ach" class="ach"></ul>
+      </div>
     </section>
 
-    <section id="screen-store" class="screen">
-      <div class="row">
+    <section id="screen-character" class="screen visible">
+      <h2 class="section">Character</h2>
+      <div class="card">
+        <div class="grid-3 attrs">
+          <div class="tile"><div class="tname">PHYSICAL</div><div id="attr-Physical" class="tval">0</div></div>
+          <div class="tile"><div class="tname">PSYCHE</div><div id="attr-Psyche" class="tval">0</div></div>
+          <div class="tile"><div class="tname">INTELLECT</div><div id="attr-Intellect" class="tval">0</div></div>
+          <div class="tile"><div class="tname">SOCIAL</div><div id="attr-Social" class="tval">0</div></div>
+          <div class="tile"><div class="tname">SPIRITUAL</div><div id="attr-Spiritual" class="tval">0</div></div>
+          <div class="tile"><div class="tname">FINANCIAL</div><div id="attr-Financial" class="tval">0</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <canvas id="radar" width="640" height="420"></canvas>
+      </div>
+    </section>
+
+    <section id="screen-store" class="screen hidden">
+      <h2 class="section">Store</h2>
+      <div class="row between">
+        <div>💰 <span id="gold2">0</span> Gold</div>
         <button id="btn-new-reward" class="btn">＋ New Reward</button>
       </div>
-      <div id="rewards" class="list"></div>
+      <div id="rewards" class="stack"></div>
       <form id="reward-form" class="card hidden">
-        <h3>New Reward</h3>
-        <label>Title <input id="r-title" required></label>
-        <label>Cost (Gold) <input id="r-cost" type="number" min="1" value="50"></label>
-        <div class="row"><button class="btn primary" type="submit">Save</button><button type="button" id="r-cancel" class="btn">Cancel</button></div>
+        <div class="title">New Reward</div>
+        <label>Title<input id="r-title" required></label>
+        <label>Cost (Gold)<input id="r-cost" type="number" min="1" value="50"></label>
+        <div class="row gap">
+          <button class="btn primary" type="submit">Save</button>
+          <button class="btn" type="button" id="r-cancel">Cancel</button>
+        </div>
       </form>
     </section>
 
-    <section id="screen-focus" class="screen">
+    <section id="screen-focus" class="screen hidden">
+      <h2 class="section">Focus</h2>
       <div class="card">
-        <h3>Focus</h3>
-        <label>Minutes <input id="focus-min" type="number" min="1" value="25"></label>
+        <label>Minutes<input id="focus-min" type="number" min="1" value="25"></label>
         <div class="focus-time" id="focus-time">25:00</div>
-        <div class="row">
+        <div class="row gap">
           <button id="f-start" class="btn primary">Start</button>
           <button id="f-pause" class="btn hidden">Pause</button>
           <button id="f-resume" class="btn hidden">Resume</button>
@@ -85,20 +103,19 @@
   </main>
 
   <nav class="tabs">
-    <button data-to="quests" class="tab active">✓ Quest</button>
-    <button data-to="journey" class="tab">🗺 Journey</button>
-    <button data-to="character" class="tab">👤 Character</button>
-    <button data-to="store" class="tab">🎁 Store</button>
-    <button data-to="focus" class="tab">⏱ Focus</button>
+    <button class="tab active" data-to="character">Character</button>
+    <button class="tab" data-to="quest">Quest</button>
+    <button class="tab" data-to="journey">Journey</button>
+    <button class="tab" data-to="store">Store</button>
+    <button class="tab" data-to="focus">Focus</button>
   </nav>
 
   <div id="modal" class="modal hidden">
     <div class="sheet">
       <h3 id="m-title">New/Edit Quest</h3>
       <form id="qform">
-        <label>Title <input id="q-title" required></label>
-        <label>Description <input id="q-desc" placeholder="Optional"></label>
-
+        <label>Title<input id="q-title" required></label>
+        <label>Description<input id="q-desc" placeholder="Optional"></label>
         <fieldset>
           <legend>Attributes (amounts)</legend>
           <label><input type="checkbox" class="attr" data-name="Physical"> Physical <input class="amt" data-name="Physical" type="number" min="1" value="1"></label>
@@ -108,7 +125,6 @@
           <label><input type="checkbox" class="attr" data-name="Spiritual"> Spiritual <input class="amt" data-name="Spiritual" type="number" min="1" value="1"></label>
           <label><input type="checkbox" class="attr" data-name="Financial"> Financial <input class="amt" data-name="Financial" type="number" min="1" value="1"></label>
         </fieldset>
-
         <label>Type
           <select id="q-type">
             <option value="timer">Timer</option>
@@ -117,12 +133,10 @@
             <option value="multicounter">Multi-counter</option>
           </select>
         </label>
-
-        <div data-if="timer"><label>Duration (min) <input id="q-min" type="number" min="1" value="30"></label></div>
-        <div data-if="counter"><label>Target Count <input id="q-target" type="number" min="1" value="10"></label></div>
-        <div data-if="checklist"><label>Checklist (comma) <input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
-        <div data-if="multicounter"><label>Multi items label:target (comma) <input id="q-multi" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1"></label></div>
-
+        <div data-if="timer"><label>Duration (min)<input id="q-min" type="number" min="1" value="30"></label></div>
+        <div data-if="counter"><label>Target Count<input id="q-target" type="number" min="1" value="10"></label></div>
+        <div data-if="checklist"><label>Checklist (comma)<input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
+        <div data-if="multicounter"><label>Multi items label:target (comma)<input id="q-multi" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1"></label></div>
         <label>Difficulty
           <select id="q-diff">
             <option value="easy">Easy</option>
@@ -132,11 +146,9 @@
             <option value="boss">Boss</option>
           </select>
         </label>
-
-        <label>Deadline <input id="q-deadline" type="datetime-local"></label>
         <label><input id="q-daily" type="checkbox"> Treat as Daily</label>
-        <label>Base XP <input id="q-xp" type="number" min="0" value="25"></label>
-        <div class="row">
+        <label>Base XP<input id="q-xp" type="number" min="0" value="25"></label>
+        <div class="row gap">
           <button class="btn primary" type="submit">Save</button>
           <button class="btn" type="button" id="q-cancel">Cancel</button>
         </div>
@@ -144,6 +156,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=117"></script>
+  <script src="app.js?v=118"></script>
 </body>
 </html>
