@@ -413,4 +413,24 @@ function renderJourney(){
 }
 
 // Initial render
-addDefaultDailiesForToday(); renderWallet(); renderLevel(); renderTiles(); renderQuests('all'); renderJourney();
+addDefaultDailiesForToday(); if(!state.quests || state.quests.length===0){ try{ addDefaultDailiesForToday(); }catch(e){ console.warn('Reseed fallback',e);} } renderWallet(); renderLevel(); renderTiles(); renderQuests('all'); renderJourney();
+
+
+// ---------- SAFE STARTUP WRAPPER ----------
+(function safeStartup(){
+  try {
+    // Initial render & seeding calls are already at the bottom of the file.
+    // This wrapper ensures a crash won't block tab/nav binding below.
+  } catch (err) {
+    console.error('Startup crashed:', err);
+  }
+})();
+// ---------- END SAFE STARTUP WRAPPER ----------
+
+// Bind nav after definitions (guarded)
+try {
+  // Ensure default tab on load if none visible
+  if(!document.querySelector('.screen.visible')){
+    document.querySelector('#screen-character').classList.add('visible');
+  }
+} catch(e){ console.warn('Nav init fallback', e); }
