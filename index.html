@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>ShadowHUD v11.8.5 (onefile)</title>
+<title>ShadowHUD v11.8.6 (onefile)</title>
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -57,6 +57,8 @@ label{display:block;margin:10px 0}input,select{width:100%;padding:12px;border-ra
 .screen{display:none}.screen.active{display:block}
 
 .screen{display:none} .screen.active{display:block}
+/* version ribbon */
+#versionRibbon{position:fixed;top:0;left:0;right:0;padding:6px 10px;background:#141414;color:#9ce66f;font:12px -apple-system,system-ui;z-index:9999;opacity:.95}
 </style>
 </head>
 <body>
@@ -208,16 +210,17 @@ label{display:block;margin:10px 0}input,select{width:100%;padding:12px;border-ra
 
   
 
+<div id="versionRibbon">ShadowHUD v11.8.6 — booting…</div>
 <script>
 (function(){
-  var b=document.createElement('div');
-  b.style.cssText='position:fixed;left:0;top:0;right:0;padding:6px 10px;background:#111;color:#0f0;font:12px -apple-system,system-ui;z-index:9999;opacity:.9';
-  b.id='diag'; b.textContent='JS boot…'; document.body.appendChild(b);
-  window.addEventListener('error',function(e){ b.textContent='Error: '+(e.message||e.error); }, true);
-  window.addEventListener('unhandledrejection',function(e){ b.textContent='Promise: '+e.reason; });
+  const rb=document.getElementById('versionRibbon');
+  window.addEventListener('error',function(e){ rb.textContent='Error: '+(e.message||e.error); rb.style.color='#ff8080'; }, true);
+  window.addEventListener('unhandledrejection',function(e){ rb.textContent='Promise: '+e.reason; rb.style.color='#ff8080'; });
 })();
 </script>
 <script>
+
+(function(){ 'use strict';
 
 // Polyfills
 (function(){
@@ -466,7 +469,9 @@ function tickTimers(){ clearInterval(window.__tick); window.__tick=setInterval((
 function init(){ midnightSweepIfNeeded(); seedTodayDailiesIfMissing(); renderCharacter(); renderJourney(); renderQuests(); tickTimers(); }
 document.addEventListener('DOMContentLoaded', init);
 
-try{ document.getElementById('diag').textContent='JS OK'; }catch(e){}
+})();
+
+try{ document.getElementById('versionRibbon').textContent='ShadowHUD v11.8.6 — JS OK'; }catch(e){}
 </script>
 </body>
 </html>
