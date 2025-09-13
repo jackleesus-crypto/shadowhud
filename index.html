@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>ShadowHUD v11.8.4 (onefile)</title>
+<title>ShadowHUD v11.8.5 (onefile)</title>
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -206,7 +206,7 @@ label{display:block;margin:10px 0}input,select{width:100%;padding:12px;border-ra
     </div>
   </div>
 
-  <script src="app.js?v=118"></script>
+  
 
 <script>
 (function(){
@@ -466,7 +466,7 @@ function tickTimers(){ clearInterval(window.__tick); window.__tick=setInterval((
 function init(){ midnightSweepIfNeeded(); seedTodayDailiesIfMissing(); renderCharacter(); renderJourney(); renderQuests(); tickTimers(); }
 document.addEventListener('DOMContentLoaded', init);
 
-try{document.getElementById('diag').textContent='JS OK';}catch(e){}
+try{ document.getElementById('diag').textContent='JS OK'; }catch(e){}
 </script>
 </body>
 </html>
