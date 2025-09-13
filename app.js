@@ -215,12 +215,12 @@ function val(id){ return document.getElementById(id).value; } function byId(id){
 document.querySelectorAll('.tabs .tab').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-    const to=b.dataset.to; document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-    if(to==='quest'){ byId('screen-quests').classList.remove('hidden'); renderQuests(); }
-    if(to==='journey'){ byId('screen-journey').classList.remove('hidden'); renderJourney(); }
-    if(to==='character'){ byId('screen-character').classList.remove('hidden'); renderCharacter(); }
-    if(to==='store'){ byId('screen-store').classList.remove('hidden'); renderStore(); }
-    if(to==='focus'){ byId('screen-focus').classList.remove('hidden'); }
+    const to=b.dataset.to; document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    if(to==='quest'){ byId('screen-quests').classList.add('active'); renderQuests(); }
+    if(to==='journey'){ byId('screen-journey').classList.add('active'); renderJourney(); }
+    if(to==='character'){ byId('screen-character').classList.add('active'); renderCharacter(); }
+    if(to==='store'){ byId('screen-store').classList.add('active'); renderStore(); }
+    if(to==='focus'){ byId('screen-focus').classList.add('active'); }
   });
 });
 

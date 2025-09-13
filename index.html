@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>ShadowHUD v11.8.1</title>
+  <title>ShadowHUD v11.8.2</title>
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="appbar">
-    <div class="brand">ShadowHUD <span class="ver">v11.8.1</span></div>
+    <div class="brand">ShadowHUD <span class="ver">v11.8.2</span></div>
     <div class="spacer"></div>
     <div class="gold">💰 <span id="gold">0</span></div>
   </header>
@@ -32,7 +32,7 @@
       <button id="fab-add" class="fab">＋</button>
     </section>
 
-    <section id="screen-journey" class="screen hidden">
+    <section id="screen-journey" class="screen">
       <h2 class="section">Journey</h2>
       <div class="card">
         <div class="row between">
@@ -52,7 +52,7 @@
       </div>
     </section>
 
-    <section id="screen-character" class="screen visible">
+    <section id="screen-character" class="screen active">
       <h2 class="section">Character</h2>
       <div class="card">
         <div class="grid-3 attrs">
@@ -69,7 +69,7 @@
       </div>
     </section>
 
-    <section id="screen-store" class="screen hidden">
+    <section id="screen-store" class="screen">
       <h2 class="section">Store</h2>
       <div class="row between">
         <div>💰 <span id="gold2">0</span> Gold</div>
@@ -87,7 +87,7 @@
       </form>
     </section>
 
-    <section id="screen-focus" class="screen hidden">
+    <section id="screen-focus" class="screen">
       <h2 class="section">Focus</h2>
       <div class="card">
         <label>Minutes<input id="focus-min" type="number" min="1" value="25"></label>

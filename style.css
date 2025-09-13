@@ -43,3 +43,5 @@
 label{display:block;margin:10px 0}input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b0b0b;color:#fff}
 .focus-time{font-size:36px;font-weight:800;margin:8px 0}
 @media (min-width:820px){ .content{padding:24px 0 110px} }
+
+.screen{display:none}.screen.active{display:block}
