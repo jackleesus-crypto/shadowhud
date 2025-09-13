@@ -1,82 +1,112 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>ShadowHUD v11.6</title>
-  <link rel="manifest" href="manifest.json">
+  <title>ShadowHUD v11.7</title>
   <meta name="theme-color" content="#0a0a0a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="app">
-  <header class="appbar">
-    <div id="appbar-title">ShadowHUD <span class="ver">v11.6</span></div>
-    <div class="spacer"></div>
-    <button id="btn-plus" class="icon" type="button">＋</button>
-  </header>
+<body>
+  <header class="bar">ShadowHUD <span class="ver">v11.7</span> <span class="gold">💰 <span id="gold">0</span></span></header>
 
-  <main class="content">
-    <section id="screen-character" class="screen visible">
-      <div class="row-top">
-        <div class="pill">💰 <span id="gold">0</span> Gold</div>
-      </div>
-      <div class="card level-card">
-        <div class="lvl-left">
-          <div id="rank-badge" class="rank-badge">E</div>
-          <div>
-            <div class="lvl-title">Level <span id="level-num">1</span></div>
-            <div class="lvl-sub">Rank <span id="rank-text">E</span></div>
-          </div>
-        </div>
-        <div class="lvl-right">
-          <div class="lvl-bar"><div id="xp-fill"></div></div>
-          <div class="lvl-xp"><span id="xp-cur">0</span>/<span id="xp-next">0</span> XP</div>
-        </div>
-      </div>
-
-      <div class="section-title">
-        <div class="title-left"><div class="hex">⬡</div>
-          <div><div class="h1">Attributes</div><div class="hint">Attributes increase only by completing quests.</div></div>
-        </div>
-      </div>
-      <div class="grid-3" id="attr-grid"></div>
-
-      <div class="card radar-card">
-        <canvas id="radar" width="320" height="220"></canvas>
-      </div>
-    </section>
-
-    <section id="screen-quests" class="screen">
-      <div class="section-header"><div class="h1">Quests</div></div>
-      <div class="filters-row">
-        <button class="chip active" data-filter="all" type="button">All</button>
-        <button class="chip" data-filter="daily" type="button">Daily</button>
-        <button class="chip" data-filter="penalty" type="button">Penalty</button>
-        <button class="chip" data-filter="active" type="button">Active</button>
-        <button class="chip" data-filter="completed" type="button">Done</button>
-        <button class="chip" data-filter="expired" type="button">Expired</button>
+  <main>
+    <section id="screen-quests" class="screen visible">
+      <div class="row">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="daily">Daily</button>
+        <button class="chip" data-filter="penalty">Penalty</button>
+        <button class="chip" data-filter="active">Active</button>
+        <button class="chip" data-filter="completed">Done</button>
       </div>
       <div id="quest-list" class="list"></div>
-      <div id="empty-note" class="empty">No quests yet. Tap ＋ to create one.</div>
+      <div id="empty-quests" class="empty">No quests yet. Tap ＋ to add.</div>
+      <div class="fab" id="fab-add">＋</div>
     </section>
 
-    <section id="screen-create" class="screen">
-      <div class="section-title"><div class="h1">New/Edit Quest</div></div>
-      <form id="quest-form" class="card form" autocomplete="off">
+    <section id="screen-journey" class="screen">
+      <div class="card">
+        <h3>Progress</h3>
+        <div>Level <span id="lvl">1</span> (<span id="rank">E</span>)</div>
+        <div class="bar2"><div id="xpbar"></div></div>
+        <div>XP: <span id="xp">0</span>/<span id="xpreq">0</span></div>
+        <div>Completed: <span id="done">0</span></div>
+        <div>Streak: <span id="streak">0</span></div>
+      </div>
+      <div class="card">
+        <h3>Achievements</h3>
+        <ul id="ach"></ul>
+      </div>
+    </section>
+
+    <section id="screen-character" class="screen">
+      <div class="card">
+        <h3>Attributes</h3>
+        <div class="grid">
+          <div class="tile"><div>PHYSICAL</div><div id="attr-Physical">0</div></div>
+          <div class="tile"><div>PSYCHE</div><div id="attr-Psyche">0</div></div>
+          <div class="tile"><div>INTELLECT</div><div id="attr-Intellect">0</div></div>
+          <div class="tile"><div>SOCIAL</div><div id="attr-Social">0</div></div>
+          <div class="tile"><div>SPIRITUAL</div><div id="attr-Spiritual">0</div></div>
+          <div class="tile"><div>FINANCIAL</div><div id="attr-Financial">0</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-store" class="screen">
+      <div class="row">
+        <button id="btn-new-reward" class="btn">＋ New Reward</button>
+      </div>
+      <div id="rewards" class="list"></div>
+      <form id="reward-form" class="card hidden">
+        <h3>New Reward</h3>
+        <label>Title <input id="r-title" required></label>
+        <label>Cost (Gold) <input id="r-cost" type="number" min="1" value="50"></label>
+        <div class="row"><button class="btn primary" type="submit">Save</button><button type="button" id="r-cancel" class="btn">Cancel</button></div>
+      </form>
+    </section>
+
+    <section id="screen-focus" class="screen">
+      <div class="card">
+        <h3>Focus</h3>
+        <label>Minutes <input id="focus-min" type="number" min="1" value="25"></label>
+        <div class="focus-time" id="focus-time">25:00</div>
+        <div class="row">
+          <button id="f-start" class="btn primary">Start</button>
+          <button id="f-pause" class="btn hidden">Pause</button>
+          <button id="f-resume" class="btn hidden">Resume</button>
+          <button id="f-cancel" class="btn">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button data-to="quests" class="tab active">✓ Quest</button>
+    <button data-to="journey" class="tab">🗺 Journey</button>
+    <button data-to="character" class="tab">👤 Character</button>
+    <button data-to="store" class="tab">🎁 Store</button>
+    <button data-to="focus" class="tab">⏱ Focus</button>
+  </nav>
+
+  <div id="modal" class="modal hidden">
+    <div class="sheet">
+      <h3 id="m-title">New/Edit Quest</h3>
+      <form id="qform">
         <label>Title <input id="q-title" required></label>
         <label>Description <input id="q-desc" placeholder="Optional"></label>
 
-        <fieldset class="attrs">
-          <legend>Attribute rewards (choose & set amount)</legend>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Physical"> Physical <input class="attr-amt" data-name="Physical" type="number" min="1" value="1"></label>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Psyche"> Psyche <input class="attr-amt" data-name="Psyche" type="number" min="1" value="1"></label>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Intellect"> Intellect <input class="attr-amt" data-name="Intellect" type="number" min="1" value="1"></label>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Social"> Social <input class="attr-amt" data-name="Social" type="number" min="1" value="1"></label>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Spiritual"> Spiritual <input class="attr-amt" data-name="Spiritual" type="number" min="1" value="1"></label>
-          <label class="arow"><input type="checkbox" class="attr" data-for="Financial"> Financial <input class="attr-amt" data-name="Financial" type="number" min="1" value="1"></label>
+        <fieldset>
+          <legend>Attributes (amounts)</legend>
+          <label><input type="checkbox" class="attr" data-name="Physical"> Physical <input class="amt" data-name="Physical" type="number" min="1" value="1"></label>
+          <label><input type="checkbox" class="attr" data-name="Psyche"> Psyche <input class="amt" data-name="Psyche" type="number" min="1" value="1"></label>
+          <label><input type="checkbox" class="attr" data-name="Intellect"> Intellect <input class="amt" data-name="Intellect" type="number" min="1" value="1"></label>
+          <label><input type="checkbox" class="attr" data-name="Social"> Social <input class="amt" data-name="Social" type="number" min="1" value="1"></label>
+          <label><input type="checkbox" class="attr" data-name="Spiritual"> Spiritual <input class="amt" data-name="Spiritual" type="number" min="1" value="1"></label>
+          <label><input type="checkbox" class="attr" data-name="Financial"> Financial <input class="amt" data-name="Financial" type="number" min="1" value="1"></label>
         </fieldset>
 
         <label>Type
@@ -88,13 +118,10 @@
           </select>
         </label>
 
-        <div class="if timer"><label>Duration (minutes) <input id="q-duration" type="number" min="1" value="30"></label></div>
-        <div class="if counter"><label>Target Count <input id="q-target" type="number" min="1" value="10"></label></div>
-        <div class="if checklist"><label>Checklist (comma separated) <input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
-        <div class="if multicounter">
-          <label>Multi-counter items (label:target, comma separated)</label>
-          <input id="q-multi" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1">
-        </div>
+        <div data-if="timer"><label>Duration (min) <input id="q-min" type="number" min="1" value="30"></label></div>
+        <div data-if="counter"><label>Target Count <input id="q-target" type="number" min="1" value="10"></label></div>
+        <div data-if="checklist"><label>Checklist (comma) <input id="q-items" placeholder="Warm up, Run 2km, Stretch"></label></div>
+        <div data-if="multicounter"><label>Multi items label:target (comma) <input id="q-multi" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1"></label></div>
 
         <label>Difficulty
           <select id="q-diff">
@@ -107,92 +134,16 @@
         </label>
 
         <label>Deadline <input id="q-deadline" type="datetime-local"></label>
-
-        <label>Repeat
-          <select id="q-repeat">
-            <option value="none">None</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-          </select>
-        </label>
-
-        <label><input id="q-is-daily" type="checkbox"> Treat as Daily (resets at midnight & may create penalties)</label>
-
-        <label>Base Reward XP <input id="q-xp" type="number" min="0" value="25"></label>
-        <label>Reminder times (HH:MM, comma) <input id="q-remindtimes" placeholder="07:00, 12:30, 20:00"></label>
-        <label>Notify before deadline (minutes) <input id="q-remind" type="number" min="0" value="10"></label>
-        <div class="form-actions">
-          <button type="submit" class="btn primary">Save</button>
-          <button type="button" id="btn-cancel" class="btn">Cancel</button>
+        <label><input id="q-daily" type="checkbox"> Treat as Daily</label>
+        <label>Base XP <input id="q-xp" type="number" min="0" value="25"></label>
+        <div class="row">
+          <button class="btn primary" type="submit">Save</button>
+          <button class="btn" type="button" id="q-cancel">Cancel</button>
         </div>
       </form>
-      <div class="card tiny hint">Daily/Penalty tags appear above the title. Checklist items use tappable circles.</div>
-    </section>
+    </div>
+  </div>
 
-    <section id="screen-store" class="screen">
-      <div class="section-title"><div class="h1">Store</div></div>
-      <div class="row-top">
-        <div class="pill">💰 <span id="gold2">0</span> Gold</div>
-        <button id="btn-add-reward" class="btn small" type="button">＋ New Reward</button>
-      </div>
-      <div id="shop-list" class="list"></div>
-      <div id="shop-empty" class="empty">No rewards yet. Add your own!</div>
-
-      <form id="reward-form" class="card form hidden">
-        <div class="h1" style="margin:0 0 6px 0;">New Reward</div>
-        <label>Title <input id="r-title" required></label>
-        <label>Description <input id="r-desc" placeholder="Optional"></label>
-        <label>Cost (Gold) <input id="r-cost" type="number" min="1" value="50"></label>
-        <div class="form-actions">
-          <button class="btn primary" type="submit">Save Reward</button>
-          <button class="btn" type="button" id="r-cancel">Cancel</button>
-        </div>
-      </form>
-    </section>
-
-    <section id="screen-focus" class="screen">
-      <div class="section-title"><div class="h1">Focus</div></div>
-      <div class="card focus-card">
-        <label>Focus length (minutes) <input id="focus-mins" type="number" min="1" value="25"></label>
-        <div class="focus-time" id="focus-time">25:00</div>
-        <div class="focus-actions">
-          <button id="focus-start" class="btn primary" type="button">Start</button>
-          <button id="focus-pause" class="btn hidden" type="button">Pause</button>
-          <button id="focus-resume" class="btn hidden" type="button">Resume</button>
-          <button id="focus-cancel" class="btn" type="button">Cancel</button>
-        </div>
-      </div>
-      <div class="hint">Simple timer.</div>
-    </section>
-
-    <section id="screen-journey" class="screen">
-      <div class="section-title"><div class="h1">Journey</div></div>
-      <div class="card">
-        <div class="q-top"><div>Progress Overview</div></div>
-        <div class="metric">Level <span id="j-level"></span></div>
-        <div class="bar"><div id="j-xp"></div></div>
-        <div class="metric">Quests Completed <span id="j-completed"></span></div>
-        <div class="bar"><div id="j-complete-bar"></div></div>
-        <div class="metric">Current Streak <span id="j-streak"></span></div>
-        <div class="bar"><div id="j-streak-bar"></div></div>
-        <div class="metric">Gold Earned <span id="j-gold"></span></div>
-      </div>
-      <div class="card">
-        <div class="q-top"><div>Achievements</div></div>
-        <div id="achievements" class="ach-list"></div>
-      </div>
-    </section>
-  </main>
-
-  <nav class="tabs">
-    <button id="tab-quests" class="tab" type="button"><div>✓</div><span>Quest</span></button>
-    <button id="tab-journey" class="tab" type="button"><div>🗺️</div><span>Journey</span></button>
-    <button id="tab-character" class="tab active" type="button"><div>👤</div><span>Character</span></button>
-    <button id="tab-store" class="tab" type="button"><div>🎁</div><span>Store</span></button>
-    <button id="tab-focus" class="tab" type="button"><div>⏱</div><span>Focus</span></button>
-  </nav>
-
-  <script src="app.js?v=116"></script>
-  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
+  <script src="app.js?v=117"></script>
 </body>
 </html>
