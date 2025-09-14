@@ -1,0 +1,76 @@
+
+/* === Tabs centering + tidy layout (v13.3.1) ===
+   Drop this file in place of your current style.css
+   or append the rules below to your existing CSS.
+*/
+
+/* Try to match most tabbar containers */
+#tabs, .tabs, .tabbar, .top-tabs, .header-tabs, .nav-tabs {
+  display: flex;
+  justify-content: center;   /* center pills neatly */
+  align-items: center;
+  gap: 12px;                 /* even spacing between pills */
+  flex-wrap: wrap;           /* wrap on small screens */
+  max-width: 880px;
+  margin: 0 auto 16px;       /* center block + add bottom space */
+  padding: 8px 12px;
+}
+
+/* Target pill buttons inside common containers */
+#tabs > button, .tabs > button, .tabbar > button,
+.top-tabs > button, .header-tabs > button, .nav-tabs > button,
+#tabs .tab, .tabs .tab, .tabbar .tab, .top-tabs .tab,
+.header-tabs .tab, .nav-tabs .tab,
+#tabs a, .tabs a, .tabbar a, .top-tabs a, .header-tabs a, .nav-tabs a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: .2px;
+  /* dark theme pills */
+  background: #2a2633;
+  color: #d4cff6;
+  border: 1px solid rgba(154, 134, 255, .28);
+  box-shadow: 0 0 0 0 rgba(0,0,0,0);
+  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+}
+
+/* Active state (works if you already add .active OR [aria-selected=true]) */
+#tabs .active, .tabs .active, .tabbar .active, .top-tabs .active,
+.header-tabs .active, .nav-tabs .active,
+#tabs [aria-selected="true"], .tabs [aria-selected="true"],
+.tabbar [aria-selected="true"], .top-tabs [aria-selected="true"],
+.header-tabs [aria-selected="true"], .nav-tabs [aria-selected="true"] {
+  background: #322c40;
+  border-color: rgba(154, 134, 255, .55);
+  box-shadow: 0 0 0 2px rgba(154,134,255,.35) inset;
+}
+
+/* Hover / press */
+#tabs > *:active, .tabs > *:active, .tabbar > *:active,
+.top-tabs > *:active, .header-tabs > *:active, .nav-tabs > *:active {
+  transform: translateY(1px);
+}
+
+/* Keep the title row tidy on small screens */
+@media (max-width: 420px) {
+  #tabs, .tabs, .tabbar, .top-tabs, .header-tabs, .nav-tabs {
+    gap: 10px;
+    padding: 6px 8px;
+  }
+  #tabs > button, .tabs > button, .tabbar > button,
+  .top-tabs > button, .header-tabs > button, .nav-tabs > button,
+  #tabs .tab, .tabs .tab, .tabbar .tab, .top-tabs .tab,
+  .header-tabs .tab, .nav-tabs .tab,
+  #tabs a, .tabs a, .tabbar a, .top-tabs a, .header-tabs a, .nav-tabs a {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+}
