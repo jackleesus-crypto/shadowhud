@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ShadowHUD v13.4</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#111017">
+</head>
+<body>
+  <header class="topbar">
+    <h1>ShadowHUD <span class="version">v13.4</span></h1>
+    <div class="gold"><span class="coin">🪙</span><span id="goldAmount">0</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="quest">Quest</button>
+    <button class="tab" data-tab="journey">Journey</button>
+    <button class="tab" data-tab="character">Character</button>
+    <button class="tab" data-tab="store">Store</button>
+    <button class="tab" data-tab="focus">Focus</button>
+  </nav>
+
+  <main>
+    <!-- Quest Tab -->
+    <section id="tab-quest" class="tabpanel active">
+      <h2>Quests</h2>
+      <div class="chip-row" id="questFilters">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="daily">Daily</button>
+        <button class="chip" data-filter="penalty">Penalty</button>
+        <button class="chip" data-filter="active">Active</button>
+        <button class="chip" data-filter="done">Done</button>
+        <button class="chip ghost" id="newQuestBtn">+</button>
+      </div>
+      <div id="questsList" class="stack"></div>
+      <dialog id="questEditor">
+        <form method="dialog" id="questForm">
+          <h3 id="qeTitle">New/Edit Quest</h3>
+          <label>Title <input id="qTitle" required /></label>
+          <label>Description <input id="qDesc" placeholder="Optional"/></label>
+          <label>Type
+            <select id="qType">
+              <option value="timer">Timer</option>
+              <option value="count">Counter</option>
+              <option value="checklist">Checklist</option>
+              <option value="multi">Multi-counter</option>
+            </select>
+          </label>
+          <label>Attribute(s)
+            <div class="attrs">
+              <label><input type="checkbox" value="physical"> Physical</label>
+              <label><input type="checkbox" value="psyche"> Psyche</label>
+              <label><input type="checkbox" value="intellect"> Intellect</label>
+              <label><input type="checkbox" value="social"> Social</label>
+              <label><input type="checkbox" value="spiritual"> Spiritual</label>
+              <label><input type="checkbox" value="financial"> Financial</label>
+            </div>
+          </label>
+          <div class="row">
+            <label>Duration (min) <input type="number" id="qMinutes" value="25" min="1"/></label>
+            <label>Target Count <input type="number" id="qTarget" value="1" min="1"/></label>
+          </div>
+          <label>Checklist (comma separated) <input id="qChecklist" placeholder="e.g., Warm up, Run 2km, Stretch"/></label>
+          <label>Multi-counter items (label:target, comma separated)
+            <input id="qMulti" placeholder="Pushups:100, Sit-ups:100, Squats:100, Run (miles):1"/>
+          </label>
+          <div class="row">
+            <label>Difficulty
+              <select id="qDifficulty">
+                <option>Normal</option>
+                <option>Hard</option>
+                <option>Elite</option>
+              </select>
+            </label>
+            <label>Repeat
+              <select id="qRepeat">
+                <option>None</option>
+                <option>Daily</option>
+              </select>
+            </label>
+            <label>Base Reward XP <input type="number" id="qXP" value="10" min="0"/></label>
+            <label>Gold <input type="number" id="qGold" value="10" min="0"/></label>
+          </div>
+          <menu class="dialog-actions">
+            <button value="cancel" class="btn">Cancel</button>
+            <button id="saveQuestBtn" class="btn primary" value="default">Save</button>
+          </menu>
+        </form>
+      </dialog>
+    </section>
+
+    <!-- Journey Tab -->
+    <section id="tab-journey" class="tabpanel">
+      <h2>Journey</h2>
+      <div class="journey-cards">
+        <div class="card">
+          <div class="titlebar">Level <span id="levelLabel">Lv 1 (E)</span> — <span id="xpBarLabel">0/47 XP</span></div>
+          <progress id="xpBar" max="47" value="0"></progress>
+          <div class="meta-row">
+            <div><strong>Completed</strong> <span id="completedTotal">0</span></div>
+            <div><strong>Streak</strong> <span id="streak">0</span></div>
+            <div><strong>Gold</strong> <span id="journeyGold">0</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="titlebar">Titles</div>
+          <div id="equippedTitle">Equipped title: None</div>
+          <div id="earnedTitles" class="chip-row"></div>
+          <button class="btn" id="chooseTitleBtn">Choose Title</button>
+        </div>
+
+        <div class="card">
+          <div class="titlebar">Achievements</div>
+          <ul id="achievements"></ul>
+        </div>
+      </div>
+
+      <dialog id="titlePicker">
+        <form method="dialog">
+          <h3>Choose a title to display</h3>
+          <div id="titleOptions" class="stack"></div>
+          <menu class="dialog-actions">
+            <button value="cancel" class="btn">Cancel</button>
+            <button value="default" id="equipTitle" class="btn primary">Equip</button>
+          </menu>
+        </form>
+      </dialog>
+    </section>
+
+    <!-- Character Tab -->
+    <section id="tab-character" class="tabpanel">
+      <h2>Character</h2>
+
+      <div class="pill-row">
+        <div class="pill">⭐ Unspent AP: <span id="unspentAP">0</span></div>
+      </div>
+
+      <div id="radarWrap" class="card">
+        <canvas id="radar" width="600" height="420"></canvas>
+      </div>
+
+      <div class="grid-attrs">
+        <div class="attr-card"><div class="big" id="attr-physical">0</div><div>PHYSICAL</div></div>
+        <div class="attr-card"><div class="big" id="attr-psyche">0</div><div>PSYCHE</div></div>
+        <div class="attr-card"><div class="big" id="attr-intellect">0</div><div>INTELLECT</div></div>
+        <div class="attr-card"><div class="big" id="attr-social">0</div><div>SOCIAL</div></div>
+        <div class="attr-card"><div class="big" id="attr-spiritual">0</div><div>SPIRITUAL</div></div>
+        <div class="attr-card"><div class="big" id="attr-financial">0</div><div>FINANCIAL</div></div>
+      </div>
+    </section>
+
+    <!-- Store Tab -->
+    <section id="tab-store" class="tabpanel">
+      <h2>Store</h2>
+      <p class="subtle">Buy and manage items here.</p>
+      <div id="storeList" class="stack"></div>
+      <div class="card">
+        <h3>New Reward</h3>
+        <div class="row">
+          <label>Title <input id="rTitle"/></label>
+          <label>Cost (Gold) <input id="rCost" type="number" min="0" value="50"/></label>
+        </div>
+        <div class="row">
+          <button id="saveReward" class="btn primary">Save</button>
+          <button id="cancelReward" class="btn">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Focus Tab -->
+    <section id="tab-focus" class="tabpanel">
+      <h2>Focus</h2>
+      <p class="subtle">Simple timer.</p>
+      <div class="card">
+        <div class="row">
+          <label>Focus length (minutes) <input id="focusMinutes" type="number" min="1" value="25"/></label>
+        </div>
+        <div id="focusTime" class="focus-time">25:00</div>
+        <div class="row">
+          <button class="btn primary" id="focusStart">Start</button>
+          <button class="btn" id="focusPause">Pause</button>
+          <button class="btn" id="focusResume">Resume</button>
+          <button class="btn danger" id="focusCancel">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="space"></footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
