@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ShadowHUD v13.3</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#0f0f14"/>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js for radar chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand">ShadowHUD <span class="ver">v13.3</span></div>
+    <div class="gold" title="Gold"><span>🪙</span><b id="goldAmount">0</b></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="quest" class="tab active">Quest</button>
+    <button data-tab="journey" class="tab">Journey</button>
+    <button data-tab="character" class="tab">Character</button>
+    <button data-tab="store" class="tab">Store</button>
+    <button data-tab="focus" class="tab">Focus</button>
+  </nav>
+
+  <main>
+    <!-- QUEST -->
+    <section id="tab-quest" class="tabpage active">
+      <div class="section-title"><h2>Quests</h2>
+        <div class="quest-filters">
+          <button class="chip filter" data-filter="all">All</button>
+          <button class="chip filter" data-filter="daily">Daily</button>
+          <button class="chip filter" data-filter="penalty">Penalty</button>
+          <button class="chip filter" data-filter="active">Active</button>
+          <button class="chip filter" data-filter="done">Done</button>
+          <button id="addQuestBtn" class="fab mini">＋</button>
+        </div>
+      </div>
+      <div id="questList" class="list"></div>
+    </section>
+
+    <!-- JOURNEY -->
+    <section id="tab-journey" class="tabpage">
+      <div class="section-title"><h2>Journey</h2></div>
+      <div class="card stat">
+        <div class="stat-row"><span>Level</span><b id="journeyLevel">1</b><span id="journeyRank" class="muted">E</span></div>
+        <div class="stat-row"><span>XP</span><b id="journeyXP">0</b>/<b id="journeyXPMax">47</b></div>
+        <div class="progress"><div id="journeyXPBar" class="bar"></div></div>
+        <div class="grid3">
+          <div><span>Completed</span><b id="journeyCompleted">0</b></div>
+          <div><span>Streak</span><b id="journeyStreak">0</b></div>
+          <div><span>Gold</span><b id="journeyGold">0</b></div>
+        </div>
+        <div class="titles">
+          <h3>Titles</h3>
+          <div id="ownedTitles" class="chips"></div>
+          <div class="equip">
+            <label>Equipped title:</label>
+            <select id="equippedTitle"></select>
+            <button id="saveTitleBtn" class="btn">Save</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARACTER -->
+    <section id="tab-character" class="tabpage">
+      <div class="section-title"><h2>Character</h2>
+        <div class="inline-pill"><span>⭐</span> Unspent AP: <b id="apCount">0</b></div>
+      </div>
+      <div class="card level">
+        <div class="lvl-left"><div class="badge">E</div></div>
+        <div class="lvl-right">
+          <div class="lvl-title">Level <b id="charLevel">1</b></div>
+          <div class="progress"><div id="charXPBar" class="bar"></div></div>
+          <div class="muted"><b id="charXP">0</b>/<b id="charXPMax">47</b> XP</div>
+        </div>
+      </div>
+
+      <canvas id="attrChart" width="360" height="320" class="chart"></canvas>
+
+      <div class="attr-grid" id="attrGrid">
+        <!-- attribute tiles will be injected -->
+      </div>
+    </section>
+
+    <!-- STORE -->
+    <section id="tab-store" class="tabpage">
+      <div class="section-title"><h2>Store</h2></div>
+      <div class="card">
+        <div class="form-row">
+          <label>Title</label>
+          <input id="rewardTitle" placeholder="e.g., Cheat meal"/>
+        </div>
+        <div class="form-row">
+          <label>Cost (Gold)</label>
+          <input id="rewardCost" inputmode="numeric" value="50"/>
+        </div>
+        <button id="addRewardBtn" class="btn">Add Reward</button>
+      </div>
+      <div id="rewardList" class="list"></div>
+    </section>
+
+    <!-- FOCUS -->
+    <section id="tab-focus" class="tabpage">
+      <div class="section-title"><h2>Focus</h2><p class="muted">Simple timer</p></div>
+      <div class="card">
+        <div class="form-row"><label>Minutes</label><input id="focusMinutes" inputmode="numeric" value="25"/></div>
+        <div id="focusTime" class="bigtime">25:00</div>
+        <div class="btn-row">
+          <button id="focusStart" class="btn primary">Start</button>
+          <button id="focusPause" class="btn">Pause</button>
+          <button id="focusResume" class="btn">Resume</button>
+          <button id="focusCancel" class="btn danger">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="questTpl">
+    <div class="card quest">
+      <div class="row space">
+        <div class="title"></div>
+        <div class="gains"><span class="xp">+0 XP</span> • <span class="gold">🪙 0</span></div>
+      </div>
+      <div class="chips meta"></div>
+      <div class="muted small resetLine"></div>
+      <div class="body"></div>
+      <div class="btn-row footer"></div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+  </script>
+</body>
+</html>
