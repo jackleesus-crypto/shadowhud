@@ -1,0 +1,53 @@
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:#0f0f11;color:#eaeaf0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
+a{color:#9ad}button{cursor:pointer}
+#topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #2a2a33;background:#121216;position:sticky;top:0;z-index:5}
+.brand{font-weight:700;letter-spacing:.3px}.brand #version{color:#9aa1c1;font-weight:600;margin-left:.4rem}
+.gold{font-weight:700}
+#tabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid #222}
+#tabs button{background:#1a1a22;border:1px solid #2a2a33;color:#eaeaf0;padding:10px 14px;border-radius:10px}
+#tabs button.active{border-color:#6b5bff;box-shadow:0 0 0 2px rgba(107,91,255,.2) inset}
+.tab{display:none;padding:16px}.tab.active{display:block}
+h2{margin:8px 0 14px;font-size:22px}
+.card{background:#14141b;border:1px solid #2a2a33;border-radius:14px;padding:14px}
+.mt{margin-top:14px}.mb{margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}.end{justify-content:flex-end}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:520px){.grid3{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b9bed2}
+input,select{background:#0f0f14;border:1px solid #2a2a33;border-radius:10px;color:#eaeaf0;padding:10px 12px}
+summary{cursor:pointer}
+.primary{background:#6b5bff;border:1px solid #6b5bff;color:#fff;border-radius:12px;padding:10px 16px}
+.ghost{background:transparent;border:1px solid #2a2a33;border-radius:10px;color:#eaeaf0;padding:8px 12px}
+.pill{background:#1a1a22;border:1px solid #2a2a33;border-radius:999px;padding:8px 12px}
+.pill.gold{background:#18130f;border-color:#3c2a18}
+.levelRow{display:flex;gap:12px;align-items:center}
+.rankIcon{width:44px;height:44px;border-radius:12px;background:#16161e;border:1px solid #2a2a33;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+.levelInfo .levelText{font-weight:800;font-size:18px}
+.subText{color:#a9aec7;font-size:12px}
+.progress{height:8px;background:#0d0d12;border:1px solid #2a2a33;border-radius:999px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;background:linear-gradient(90deg,#6bd0ff,#6b5bff);width:0%}
+#attrGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.attrTile{background:#14141b;border:1px solid #2a2a33;border-radius:12px;padding:16px;text-align:center}
+.attrTile .num{font-size:26px;font-weight:800;margin-bottom:8px}
+.titleBar{display:flex;align-items:center;justify-content:space-between}
+.chips{display:flex;gap:8px;margin-bottom:8px}
+.chip{background:#1a1a22;border:1px solid #2a2a33;color:#eaeaf0;border-radius:999px;padding:8px 12px}
+.chip.active{border-color:#6b5bff}
+.questCard{background:#14141b;border:1px solid #303046;border-radius:16px;padding:14px;margin-bottom:12px}
+.questTop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{background:#1a1a22;border:1px solid #2a2a33;border-radius:999px;padding:4px 10px;font-size:12px}
+.meta{color:#9aa1c1;font-size:12px}
+.qcontrols{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.qcountdown{font-size:12px;color:#d1d6ff}
+.metric{background:#14141b;border:1px solid #2a2a33;border-radius:12px;text-align:center;padding:10px}
+.metric>div{font-size:20px;font-weight:800}
+.focusTimer{font-size:36px;font-weight:800;letter-spacing:2px;margin:10px 0}
+#fab{position:fixed;right:16px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#6b5bff;color:#fff;border:none;font-size:26px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+#questList .empty{opacity:.7;text-align:center;padding:30px 6px}
+.title-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.titleBadge{border:1px solid #3a3a4a;border-radius:999px;padding:6px 10px;background:#16161e;font-size:12px}
+.titleBadge.locked{opacity:.45}
+.titleBadge .equip{margin-left:8px}
+.rewardRow{display:flex;justify-content:space-between;align-items:center;border:1px solid #2a2a33;background:#14141b;border-radius:12px;padding:10px;margin-top:8px}
+.rewardRow .actions{display:flex;gap:8px}
